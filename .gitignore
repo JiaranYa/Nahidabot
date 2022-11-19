@@ -60,6 +60,8 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+db.sqlite3-shm
+db.sqlite3-wal
 
 # Flask stuff:
 instance/
@@ -102,7 +104,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+# .env
 .venv
 env/
 venv/
@@ -127,3 +129,16 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+accounts/
+
+cmd.txt
+
+!go-cqhttp/
+go-cqhttp/*
+!go-cqhttp/config.yml
+
+.env.dev
+.vscode/
+
+Nahidabot/database/static/graphic/
+Nahidabot/database/static/font/
