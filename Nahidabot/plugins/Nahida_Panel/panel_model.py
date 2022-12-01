@@ -5,19 +5,19 @@ from PIL import Image, ImageDraw
 
 
 class ShowImage(object):
-    """
+    """ """
 
-    """
-    def __init__(self,
-                image:Optional[Image.Image] = None,
-                size:tuple[int,int] = (200,200),
-                color:Union[str,tuple[int,int,int,int]] = "#FFFF",
-                mode:str = "RGBA"
-                ) -> None:
+    def __init__(
+        self,
+        image: Optional[Image.Image] = None,
+        size: tuple[int, int] = (200, 200),
+        color: Union[str, tuple[int, int, int, int]] = "#FFFF",
+        mode: str = "RGBA",
+    ) -> None:
         if image:
             self.image = image.copy().convert(mode)
         else:
-            self.image = Image.new(mode=mode,size=size,color=color)
+            self.image = Image.new(mode=mode, size=size, color=color)
 
     @property
     def draw(self):
@@ -35,14 +35,14 @@ class ShowImage(object):
     #     else:
     #         self.image.resize(size,Image.ANTIALIAS)
 
-    async def bg_setting(self,color:Union[str,tuple[int,int,int,int]]):
-        image = Image.new(mode="RGBA",size=self.size,color=color)
-        self.image = Image.blend(self.image,image,0.4)
+    async def bg_setting(self, color: Union[str, tuple[int, int, int, int]]):
+        image = Image.new(mode="RGBA", size=self.size, color=color)
+        self.image = Image.blend(self.image, image, 0.4)
         pass
 
     def save_to_io(self, **kwargs):
         bio = BytesIO()
-        self.image.save(bio,"png",**kwargs)
+        self.image.save(bio, "png", **kwargs)
         return bio
 
     def show(self):
@@ -51,48 +51,53 @@ class ShowImage(object):
     async def crop(self):
         pass
 
-    async def paste(self,
-                    image:Union[Image.Image,"ShowImage"],
-                    pos):
+    async def paste(self, image: Union[Image.Image, "ShowImage"], pos):
         if isinstance(image, ShowImage):
             image = image.image
 
         image = image.convert("RGBA")
-        self.image.paste(image,pos,image)
+        self.image.paste(image, pos, image)
 
-    async def text( self,
-                    text:Union[str,int,float],
-                    width:Union[float, Tuple[float, float]],
-                    height:Union[float, Tuple[float, float]],
-                    font:Optional[Any] = None,
-                    color:Union[str, Tuple[int, int, int]] = 'white',
-                    align:Literal['left', 'center', 'right'] = 'left'):
+    async def text(
+        self,
+        text: Union[str, int, float],
+        width: Union[float, Tuple[float, float]],
+        height: Union[float, Tuple[float, float]],
+        font: Optional[Any] = None,
+        color: Union[str, Tuple[int, int, int]] = "white",
+        align: Literal["left", "center", "right"] = "left",
+    ):
 
-        if isinstance(text,(int,float)):
+        if isinstance(text, (int, float)):
             text = str(text)
 
         if align == "left":
-            if isinstance(width,tuple):
+            if isinstance(width, tuple):
                 width = width[0]
             if isinstance(height, tuple):
                 height = height[0]
-            self.draw.text(xy=(width,height),text=text,fill=color,font=font)
-        elif align in ['center', 'right']:
+            self.draw.text(xy=(width, height), text=text, fill=color, font=font)
+        elif align in ["center", "right"]:
             W, H = self.draw.textsize(text, font)
-            if align == 'center':
-                w = width[0] + (width[1] - width[0] - W) / 2 if isinstance(width, tuple) else width
-                h = height[0] + (height[1] - height[0] - H) / 2 if isinstance(height, tuple) else height
+            if align == "center":
+                w = (
+                    width[0] + (width[1] - width[0] - W) / 2
+                    if isinstance(width, tuple)
+                    else width
+                )
+                h = (
+                    height[0] + (height[1] - height[0] - H) / 2
+                    if isinstance(height, tuple)
+                    else height
+                )
             else:
                 if isinstance(width, tuple):
                     width = width[1]
                 w = width - W
                 h = height[0] if isinstance(height, tuple) else height
-            self.draw.text(xy=(w, h),
-                           text=text,
-                           fill=color,
-                           font=font)
+            self.draw.text(xy=(w, h), text=text, fill=color, font=font)
         else:
-            raise ValueError("对齐类型必须为\'left\', \'center\'或\'right\'")
+            raise ValueError("对齐类型必须为'left', 'center'或'right'")
 
-    async def text_box( self):
+    async def text_box(self):
         pass

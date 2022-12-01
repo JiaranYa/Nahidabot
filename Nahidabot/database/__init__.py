@@ -6,23 +6,24 @@ from Nahidabot.utils.path import DB_PATH
 from .models import *
 
 DATABASE = {
-    "connections":  {
-        "database":      {
-            "engine":       "tortoise.backends.sqlite",
-            "credentials":  {"file_path": DB_PATH},
+    "connections": {
+        "database": {
+            "engine": "tortoise.backends.sqlite",
+            "credentials": {"file_path": DB_PATH},
         }
     },
-    "apps":         {
-        "resource":     {
-            "models":               ['Nahidabot.database.models.resource'],
-            "default_connection":   "database",
+    "apps": {
+        "resource": {
+            "models": ["Nahidabot.database.models.resource"],
+            "default_connection": "database",
         },
-        "data":     {
-            "models":               ['Nahidabot.database.models.playerinfo'],
-            "default_connection":   "database",
-        }
-    }
+        "data": {
+            "models": ["Nahidabot.database.models.playerinfo"],
+            "default_connection": "database",
+        },
+    },
 }
+
 
 async def connect():
     """
@@ -35,6 +36,7 @@ async def connect():
     except Exception as e:
         logger.opt(colors=True).error("虚空连接失败")
         raise e
+
 
 async def disconnect():
     await Tortoise.close_connections()

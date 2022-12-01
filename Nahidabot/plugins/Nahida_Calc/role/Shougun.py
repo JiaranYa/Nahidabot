@@ -1,9 +1,19 @@
 import numpy as np
 
-from Nahidabot.utils.classmodel import (Buff, BuffList, CalcProp, DMGBonus,
-                                        DmgInfo, FixValue, Multiplier,
-                                        PropBuff, PropTensor, Role, TransMat,
-                                        TransMatList)
+from Nahidabot.utils.classmodel import (
+    Buff,
+    BuffList,
+    CalcProp,
+    DMGBonus,
+    DmgInfo,
+    FixValue,
+    Multiplier,
+    PropBuff,
+    PropTensor,
+    Role,
+    TransMat,
+    TransMatList,
+)
 
 from ..dmg_model import DMGCalc
 

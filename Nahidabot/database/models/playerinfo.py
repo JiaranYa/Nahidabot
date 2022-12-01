@@ -7,10 +7,10 @@ from Nahidabot.utils.classmodel import (
     FightProp,
     PlayerInfo,
     PropertySlot,
+    PropInfo,
     Relic,
     Relicset,
     RoleInfo,
-    PropInfo,
     Weapon,
 )
 from Nahidabot.utils.file import load_json

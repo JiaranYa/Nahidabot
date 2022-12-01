@@ -91,7 +91,7 @@ class PropInfo(BaseModel):
     """神之眼"""
     fetter: int
     """好感度"""
-    weapon_type: Literal["单手剑", "弓", "长柄", "双手剑", "法器",""]
+    weapon_type: Literal["单手剑", "弓", "长柄", "双手剑", "法器", ""]
     """武器类型"""
     region: str = ""
     """所属地区"""
@@ -111,7 +111,7 @@ class PropInfo(BaseModel):
     """元素战技加成"""
     skill_Q_prod: int = 0
     """元素爆发加成"""
-    party_member:list[str]=[]
+    party_member: list[str] = []
     """队友"""
 
     @property
@@ -429,6 +429,7 @@ class PropBuff(BaseModel):
 
 class FixValue(BaseModel):
     """"""
+
     dmg: float = 0
     heal: float = 0
     shield: float = 0

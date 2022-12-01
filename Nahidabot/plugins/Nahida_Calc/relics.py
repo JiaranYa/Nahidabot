@@ -1,11 +1,11 @@
 from Nahidabot.utils.classmodel import (
-    Relicset,
-    BuffList,
     Buff,
+    BuffList,
     BuffSetting,
     DMGBonus,
-    PropInfo,
     PropBuff,
+    PropInfo,
+    Relicset,
 )
 
 
