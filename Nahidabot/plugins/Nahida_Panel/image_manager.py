@@ -1,8 +1,10 @@
 from nonebot import on_command
-from nonebot.rule import to_me
 from nonebot.adapters.onebot.v11 import Message, MessageEvent
 from nonebot.params import CommandArg
+from nonebot.rule import to_me
+
 from Nahidabot.database import Player, PropList
+
 from .draw_panel import draw_role_info
 
 info_panel = on_command("面板",rule=to_me(),priority=5,block=True)
@@ -18,3 +20,11 @@ async def _(event:MessageEvent,msg:Message = CommandArg()):
         await info_panel.finish(feedback)
     else:
         await info_panel.finish("没有该角色信息")
+
+# dmg_panel = on_command("伤害",rule=to_me(),priority=5,block=True)
+
+# @dmg_panel.handle()
+# async def _(event:MessageEvent,msg:Message = CommandArg()):
+#     from Nahida_Calc.role import dmg_info
+
+#     dmg_info()

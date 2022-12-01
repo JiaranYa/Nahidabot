@@ -1,7 +1,9 @@
-from .models import *
-from tortoise import Tortoise
 from nonebot.log import logger
+from tortoise import Tortoise
+
 from Nahidabot.utils.path import DB_PATH
+
+from .models import *
 
 DATABASE = {
     "connections":  {

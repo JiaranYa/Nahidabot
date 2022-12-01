@@ -1,5 +1,7 @@
 from typing import Optional
-def rarity_rating(score:Optional[float])->str: 
+
+
+def rarity_rating(score:Optional[float])->str:
     if score is None:
         return "未评级"
     elif score == 60:
@@ -18,4 +20,3 @@ def rarity_rating(score:Optional[float])->str:
         return "N"
     else :
         return "G"
-    

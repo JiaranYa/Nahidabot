@@ -1,10 +1,12 @@
-from PIL import Image, ImageDraw
 from io import BytesIO
-from typing import Optional, Union, Literal, Tuple, Any
+from typing import Any, Literal, Optional, Tuple, Union
+
+from PIL import Image, ImageDraw
+
 
 class ShowImage(object):
     """
-    
+
     """
     def __init__(self,
                 image:Optional[Image.Image] = None,
@@ -35,7 +37,7 @@ class ShowImage(object):
 
     async def bg_setting(self,color:Union[str,tuple[int,int,int,int]]):
         image = Image.new(mode="RGBA",size=self.size,color=color)
-        self.image = Image.blend(self.image,image,0.6)
+        self.image = Image.blend(self.image,image,0.4)
         pass
 
     def save_to_io(self, **kwargs):
@@ -54,7 +56,7 @@ class ShowImage(object):
                     pos):
         if isinstance(image, ShowImage):
             image = image.image
-            
+
         image = image.convert("RGBA")
         self.image.paste(image,pos,image)
 
@@ -67,7 +69,7 @@ class ShowImage(object):
                     align:Literal['left', 'center', 'right'] = 'left'):
 
         if isinstance(text,(int,float)):
-            text = str(text)  
+            text = str(text)
 
         if align == "left":
             if isinstance(width,tuple):
@@ -91,6 +93,6 @@ class ShowImage(object):
                            font=font)
         else:
             raise ValueError("对齐类型必须为\'left\', \'center\'或\'right\'")
-    
+
     async def text_box( self):
         pass

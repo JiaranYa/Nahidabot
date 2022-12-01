@@ -1,9 +1,13 @@
-from typing import Union, Optional
-from urllib.parse import urljoin
+import json
 from pathlib import Path
-import json, aiofiles, aiohttp
-from PIL import Image
+from typing import Optional, Union
+from urllib.parse import urljoin
+
+import aiofiles
+import aiohttp
 from nonebot.log import logger
+from PIL import Image
+
 from Nahidabot.utils.path import AKASHA_STORE_URL, GRAPHIC_PATH
 
 
@@ -48,7 +52,7 @@ async def load_img( path:Union[Path,str],
                     async with aiofiles.open(file,'wb') as f:
                         await f.write(content)
 
-    img = Image.open(file) 
+    img = Image.open(file)
 
     if size:
         img = img.resize(size,Image.ANTIALIAS)

@@ -1,39 +1,69 @@
-from Nahidabot.utils.file import load_json
 import asyncio
+from typing import List, Literal, Union
+
+import numpy as np
+
+from Nahidabot.utils.classmodel import (
+    Buff,
+    CalcProp,
+    DMGBonus,
+    FixValue,
+    Multiplier,
+    PropBuff,
+    PropTensor,
+    TransMat,
+    TransMatList,
+)
+from Nahidabot.utils.file import load_json
 
 factor_map = asyncio.run(load_json(path="./base_factor.json"))
+
 
 class DMGCalc(object):
     """
     伤害计算器
-    """    
-    def __init__(self,level=90,
-                    baseprop=0,
-                    mutiplier=0,
-                    crit_rate=0,
-                    crit_dmg=0,
-                    elem_mastary=0,
-                    dmg_bonus=0,
-                    healing=0,
-                    elem_res=0.1,
-                    def_res=0,
-                    fix_dmg=0,
-                    fix_heal=0,
-                    fix_shield=0,
-                    reaction_factor=1) -> None:
+    """
+
+    def __init__(
+        self,
+        value_type="",
+        elem_type="",
+        level: int = 90,
+        basic_prop: CalcProp = CalcProp(),
+        mutiplier: Multiplier = Multiplier(),
+        crit_rate: float = 0,
+        crit_dmg: float = 0,
+        elem_mastery: float = 0,
+        recharge: float = 1,
+        dmg_bonus: DMGBonus = DMGBonus(),
+        healing: float = 0,
+        elem_res: float = 0.1,
+        def_res: float = 0,
+        def_piercing: float = 0,
+        fix_value: FixValue = FixValue(),
+        reaction_factor: float = 1,
+        trans_matrix: TransMatList = TransMatList([TransMat(t_mat=np.identity(9))]),
+    ) -> None:
+
+        self.value_type: Literal["NA", "CA", "PA", "E", "Q", "H", "S", ""]  = value_type  # type: ignore
+        """数值类型:NA-普攻 CA-重击 PA-下落攻击 E-战技 Q-爆发 H-治疗 S-护盾"""
+        self.elem_type: Literal["phy", "pyro", "electro", "hydro", "dendro", "anemo", "geo", "cryo", ""] = elem_type  # type: ignore
+        """元素类型"""
         self.level = level
         """等级"""
-        self.baseprop = baseprop
-        """基础属性（三围）"""
+        self.basic_prop = basic_prop
+        """攻击/生命/防御"""
         self.mutiplier = mutiplier
         """倍率"""
         self.crit_rate = crit_rate
         """暴击率"""
         self.crit_dmg = crit_dmg
         """暴击伤害"""
-        self.elem_mastary = elem_mastary
+        self.elem_mastery = elem_mastery
         """元素精通"""
-        self.dmg_bonus = dmg_bonus
+        self.recharge = recharge
+        """充能"""
+        self.dmg_bonus_list = dmg_bonus
         """增伤"""
         self.healing = healing
         """治疗"""
@@ -41,150 +71,385 @@ class DMGCalc(object):
         """元素抗性"""
         self.def_resistance = def_res
         """防御抗性"""
-        self.fix_dmg = fix_dmg
-        """固定伤害"""
-        self.fix_heal = fix_heal
-        """固定治疗"""
-        self.fix_shield = fix_shield
-        """固定盾量"""
-        self.factor = reaction_factor
+        self.def_piercing = def_piercing
+        """无视防御"""
+        self.fix_value = fix_value
+        """固定伤害/治疗/盾量"""
+        self.rea_factor = reaction_factor
         """反应系数加成"""
+        self.matrix_list = trans_matrix
+        """转移矩阵 可叠加为列表
+            第一个为阈值矩阵，第二个为转移矩阵
+            两两配对
+        """
 
-    def buff(self,extra_baseprop=0,
-                extra_mutiplier=0,
-                extra_crit_rate=0,
-                extra_crit_dmg=0,
-                extra_elem_mastary=0,
-                extra_dmg_bonus=0,
-                extra_healing=0,
-                resist_reduction=0,
-                def_reduction=0,
-                extra_fixdmg=0,
-                extra_fixheal=0,
-                extra_shield=0,
-                extra_reaction_coeff=0):
+    def set(
+        self, value_type="", elem_type="", mutiplier: Union[Multiplier, None] = None
+    ):
+        """
+        函数：复制/设定伤害属性
+        Args:
+            value_type  :数值类型
+            elem_type   :伤害元素类型
+            mutiplier   :倍率
+        Returns:
+            新伤害属性
+        """
+        return DMGCalc(
+            value_type=value_type if value_type else self.value_type,
+            elem_type=elem_type if elem_type else self.elem_type,
+            mutiplier=mutiplier if mutiplier else self.mutiplier,
+            level=self.level,
+            basic_prop=self.basic_prop,
+            crit_rate=self.crit_rate,
+            crit_dmg=self.crit_dmg,
+            elem_mastery=self.elem_mastery,
+            recharge=self.recharge,
+            dmg_bonus=self.dmg_bonus_list,
+            healing=self.healing,
+            elem_res=self.elem_resistance,
+            def_res=self.def_resistance,
+            def_piercing=self.def_piercing,
+            fix_value=self.fix_value,
+            reaction_factor=self.rea_factor,
+            trans_matrix=self.matrix_list,
+        )
+
+    def buff(
+        self,
+        extra_prop: PropBuff = PropBuff(),
+        extra_mutiplier: Multiplier = Multiplier(),
+        extra_crit_rate: float = 0,
+        extra_crit_dmg: float = 0,
+        extra_elem_mastery: float = 0,
+        extra_recharge: float = 0,
+        extra_dmg_bonus: DMGBonus = DMGBonus(),
+        extra_healing: float = 0,
+        resist_reduction: float = 0,
+        def_reduction: float = 0,
+        def_piercing: float = 0,
+        extra_fixvalue: FixValue = FixValue(),
+        extra_reaction_coeff: float = 0,
+        extra_trans_matrix: TransMatList = TransMatList(),
+    ):
         """
         函数：获取增益后的面板数值
         @params: 面板增益数值
         @returns: 新面板数值
         """
-        return DMGCalc( level=self.level,
-                        baseprop=self.baseprop+extra_baseprop,
-                        mutiplier=self.mutiplier+extra_mutiplier,
-                        crit_rate=self.crit_rate+extra_crit_rate,
-                        crit_dmg=self.crit_dmg+extra_crit_dmg,
-                        elem_mastary=self.elem_mastary+extra_elem_mastary,
-                        dmg_bonus=self.dmg_bonus+extra_dmg_bonus,
-                        healing=self.healing+extra_healing,
-                        elem_res=self.elem_resistance+resist_reduction,
-                        def_res=self.def_resistance+def_reduction,
-                        fix_dmg=self.fix_dmg+extra_fixdmg,
-                        fix_heal=self.fix_heal+extra_fixheal,
-                        fix_shield=self.fix_shield+extra_shield,
-                        reaction_factor=self.factor+extra_reaction_coeff)
+
+        return DMGCalc(
+            value_type=self.value_type,
+            elem_type=self.elem_type,
+            level=self.level,
+            basic_prop=self.basic_prop + extra_prop,
+            mutiplier=self.mutiplier + extra_mutiplier,
+            crit_rate=self.crit_rate + extra_crit_rate,
+            crit_dmg=self.crit_dmg + extra_crit_dmg,
+            elem_mastery=self.elem_mastery + extra_elem_mastery,
+            recharge=self.recharge + extra_recharge,
+            dmg_bonus=self.dmg_bonus_list + extra_dmg_bonus,
+            healing=self.healing + extra_healing,
+            elem_res=self.elem_resistance - resist_reduction,
+            def_res=self.def_resistance - def_reduction,
+            def_piercing=self.def_piercing + def_piercing,
+            fix_value=self.fix_value + extra_fixvalue,
+            reaction_factor=self.rea_factor + extra_reaction_coeff,
+            trans_matrix=self.matrix_list + extra_trans_matrix,
+        )
+
+    @property
+    def dmg_bonus(self) -> float:
+        if self.elem_type in "phy":
+            return self.dmg_bonus_list[self.elem_type] + self.dmg_bonus_list["all"]
+        elif self.elem_type:
+            return (
+                self.dmg_bonus_list[self.elem_type]
+                + self.dmg_bonus_list["elem"]
+                + self.dmg_bonus_list["all"]
+            )
+        else:
+            return 0
+
+    @property
+    def prop(self):
+        """
+        发生转移加成后的基础属性列表
+        """
+        row_vec = np.array(
+            [
+                self.basic_prop.hp,
+                self.basic_prop.atk,
+                self.basic_prop.defend,
+                self.elem_mastery,
+                self.crit_rate,
+                self.crit_dmg,
+                self.recharge,
+                self.dmg_bonus_list[self.elem_type],
+                self.healing,
+            ]
+        )
+        # 属性向量
+        #     0-生命值    1-攻击力    2-防御力
+        #     3-精通      4-暴击      5-暴伤
+        #     6-充能      7-增伤      8-治疗
+        output: np.ndarray = np.zeros(9)
+        tm: TransMat
+        for tm in self.matrix_list:
+            output += np.dot(row_vec - tm.mask, tm.t_mat)
+
+        if self.elem_type in "phy":
+            dmg_bonus = output[7] + self.dmg_bonus_list["all"]
+        elif self.elem_type:
+            dmg_bonus = (
+                output[7] + self.dmg_bonus_list["elem"] + self.dmg_bonus_list["all"]
+            )
+        else:
+            dmg_bonus = 0
+
+        return PropTensor(
+            hp=output[0],
+            atk=output[1],
+            defend=output[2],
+            elem_mastery=output[3],
+            crit_rate=output[4],
+            crit_dmg=output[5],
+            recharge=output[6],
+            dmg_bonus=dmg_bonus,
+            healing=output[8],
+        )
+
+    @property
+    def base_value(self):
+        """"""
+        return (
+            self.prop.hp * self.mutiplier.hp
+            + self.prop.atk * self.mutiplier.atk
+            + self.prop.defend * self.mutiplier.defend
+            + self.prop.elem_mastery * self.mutiplier.em
+        ) / 100
 
     @property
     def base_dmg_zone(self):
         """基础伤害乘区"""
-        return self.baseprop*self.mutiplier + self.fix_dmg
+        return self.base_value + self.fix_value.dmg
 
     @property
     def dmg_bonus_zone(self):
         """增伤区"""
-        return 1 + self.dmg_bonus
+        return 1 + self.prop.dmg_bonus
 
     @property
     def expectation_hit_zone(self):
         """暴击期望区"""
-        return 1+min(max(self.crit_rate,0),1)*self.crit_dmg
+        return 1 + min(max(self.prop.crit_rate, 0), 1) * self.prop.crit_dmg
 
     @property
     def crit_hit_zone(self):
         """必定暴击"""
-        return 1+self.crit_dmg
+        return 1 + self.prop.crit_dmg
 
     @property
     def elem_res_zone(self):
         """抗性区"""
-        if elem_res:=self.elem_resistance<0:
-            return 1-elem_res/2
-        elif elem_res<=0.75:
-            return 1-elem_res
+        if (elem_res := self.elem_resistance) < 0:
+            return 1 - elem_res / 2
+        elif elem_res <= 0.75:
+            return 1 - elem_res
         else:
-            return 1/(1+elem_res*4)
+            return 1 / (1 + elem_res * 4)
 
     @property
     def def_res_zone(self):
         """防御区"""
-        return (90+100)/((self.level+100)+(1+self.def_resistance)*(90+100))
-               
-    
-    def get_dmg(self,mode)->float:
+        return (self.level + 100) / (
+            (self.level + 100)
+            + (1 - self.def_piercing) * (1 + self.def_resistance) * (90 + 100)
+        )
+
+    def reaction_zone(self, reaction):
+        if reaction in ["火蒸发", "冰融化", "水蒸发", "火融化"]:
+            return self.rea_factor + 2.78 * self.prop.elem_mastery / (
+                self.prop.elem_mastery + 1400
+            )
+        elif reaction in ["蔓激化", "超激化"]:
+            return self.rea_factor + 5 * self.prop.elem_mastery / (
+                self.prop.elem_mastery + 1200
+            )
+        elif reaction == "结晶":
+            return self.rea_factor + 4.44 * self.prop.elem_mastery / (
+                self.prop.elem_mastery + 1400
+            )
+        else:
+            return self.rea_factor + 16 * self.prop.elem_mastery / (
+                self.prop.elem_mastery + 2000
+            )
+
+    def get_dmg(self, mode) -> float:
         """
         非反应伤害计算器
-        @params:
+        Args:
             mode:   "exp":期望伤害
                     "crit":暴击伤害
                     "":无暴击
         """
-        if mode == "exp": crit_zone = self.expectation_hit_zone
-        elif mode == "crit": crit_zone = self.crit_hit_zone
-        else: crit_zone = 1
+        if mode == "exp":
+            crit_zone = self.expectation_hit_zone
+        elif mode == "crit":
+            crit_zone = self.crit_hit_zone
+        else:
+            crit_zone = 1
 
-        return self.base_dmg_zone * self.dmg_bonus_zone * self.elem_res_zone * self.def_res_zone * crit_zone
+        return (
+            self.base_dmg_zone
+            * self.dmg_bonus_zone
+            * self.elem_res_zone
+            * self.def_res_zone
+            * crit_zone
+        )
 
-    def get_amp_reac_dmg(self,mode,reaction_type = ""):
+    def get_amp_reac_dmg(
+        self,
+        mode,
+        reaction_type: Literal["火蒸发", "冰融化", "水蒸发", "火融化", "蔓激化", "超激化", ""] = "",
+    ):
         """
         增幅反应伤害
         Amplifying Reactions
         """
-        if reaction_type in ["火蒸发","冰融化"]:
-            return 1.5*(1+self.factor+2.78*self.elem_mastary/(self.elem_mastary+1400)) * self.get_dmg(mode)
-        elif reaction_type in ["水蒸发","火融化"]:
-            return 2*(1+self.factor+2.78*self.elem_mastary/(self.elem_mastary+1400)) * self.get_dmg(mode)
+        if reaction_type in ["火蒸发", "冰融化"]:
+            return 1.5 * self.reaction_zone(reaction_type) * self.get_dmg(mode)
+        elif reaction_type in ["水蒸发", "火融化"]:
+            return 2 * self.reaction_zone(reaction_type) * self.get_dmg(mode)
         elif reaction_type in ["蔓激化"]:
-            reaction_coeff =  factor_map["TransReac"][self.level] * 1.25 *(1+5*self.elem_mastary/
-                                                                (self.elem_mastary+1200)+self.factor)
-            return self.buff(extra_fixdmg=reaction_coeff).get_dmg(mode=mode)
+            boost = (
+                factor_map["TransReac"][self.level]
+                * 1.25
+                * self.reaction_zone(reaction_type)
+            )
+            return self.buff(extra_fixvalue=FixValue(dmg=boost)).get_dmg(mode=mode)
         elif reaction_type in ["超激化"]:
-            reaction_coeff =  factor_map["TransReac"][self.level] * 1.15 *(1+5*self.elem_mastary/
-                                                                (self.elem_mastary+1200)+self.factor)
-            return self.buff(extra_fixdmg=reaction_coeff).get_dmg(mode=mode)
-        else: 
-            print("错误调用get_amp_reac_dmg，这不是增幅反应")
+            boost = (
+                factor_map["TransReac"][self.level]
+                * 1.15
+                * self.reaction_zone(reaction_type)
+            )
+            return self.buff(extra_fixvalue=FixValue(dmg=boost)).get_dmg(mode=mode)
+        else:
+            # print("错误调用get_amp_reac_dmg，这不是增幅反应")
             return self.get_dmg(mode)
-            
 
-    def get_trans_reac_dmg(self,reaction_type = ""):
+    def get_trans_reac_dmg(
+        self,
+        reaction_type: Literal[
+            "", "燃烧", "超导", "扩散", "感电", "碎冰", "超载", "原绽放", "烈绽放", "超绽放"
+        ] = "",
+    ):
         """
         剧变反应伤害
         Transformative Reactions
         """
         factor_list = {
-            "燃烧":0.25,
-            "超导":0.5,
-            "扩散":0.6,
-            "感电":1.2,
-            "碎冰":1.5,
-            "超载":2,
-            "原绽放":2,
-            "烈绽放":3,
-            "超绽放":3,
+            "燃烧": 0.25,
+            "超导": 0.5,
+            "扩散": 0.6,
+            "感电": 1.2,
+            "碎冰": 1.5,
+            "超载": 2,
+            "原绽放": 2,
+            "烈绽放": 3,
+            "超绽放": 3,
         }
         if reaction_type in factor_list.keys():
-            return factor_list[reaction_type] * factor_map["TransReac"][self.level] * (1+self.factor+16*self.elem_mastary/
-                                                                                                    (self.elem_mastary+2000))
+            return (
+                factor_list[reaction_type]
+                * factor_map["TransReac"][self.level]
+                * self.reaction_zone(reaction_type)
+                * self.elem_res_zone
+            )
+        else:
+            # print("这不是剧变反应")
+            return 0
+
     def get_crystall_shield(self):
         """结晶盾"""
-        return factor_map["Cryst"][self.level]*(1+4.44*self.elem_mastary/(self.elem_mastary+1400))
+        return factor_map["Cryst"][self.level] * self.reaction_zone("结晶")
 
     def get_healing(self):
         """治疗量"""
-        return (self.baseprop*self.mutiplier + self.fix_heal)*self.healing
+        return (self.base_value + self.fix_value.heal) * self.prop.healing
 
     def get_shield(self):
         """盾量"""
-        return self.baseprop*self.mutiplier + self.fix_shield
+        return self.base_value + self.fix_value.shield
 
-class Buffer(object):
-    pass
+    def __add__(self, other: "BufferList"):
+        output = self.set()
+        buff: Buff
+        for buff in other:
+            if output.value_type in buff.value_type:
+                if output.elem_type == "phy":
+                    if any(e in buff.elem_type for e in ["phy", "all"]):
+                        pass
+                    else:
+                        break
+                else:
+                    if any(
+                        e in buff.elem_type for e in [output.elem_type, "elem", "all"]
+                    ):
+                        pass
+                    else:
+                        break
+            else:
+                break
+
+            output = output.buff(
+                extra_prop=buff.basic_prop,
+                extra_mutiplier=buff.mutiplier,
+                extra_crit_rate=buff.crit_rate,
+                extra_crit_dmg=buff.crit_dmg,
+                extra_elem_mastery=buff.elem_mastery,
+                extra_recharge=buff.recharge,
+                extra_dmg_bonus=buff.dmg_bonus,
+                extra_healing=buff.healing,
+                resist_reduction=buff.resist_reduction,
+                def_reduction=buff.def_reduction,
+                def_piercing=buff.def_piercing,
+                extra_fixvalue=buff.fix_value,
+                extra_reaction_coeff=buff.reaction_coeff,
+                extra_trans_matrix=buff.trans_matrix_list,
+            )
+        return output
+
+
+class BufferList(List[Buff]):
+    """增益缓存表"""
+
+    def __init__(self, buff: List[Buff]):
+        super().__init__(buff)
+
+    def __add__(self, other: "BufferList"):
+        output = self.copy()
+        adder = other.copy()
+        for i, a in enumerate(output):
+            for j, b in enumerate(adder):
+                if a.value_type == b.value_type and a.elem_type == b.elem_type:
+                    del output[i]
+                    del adder[j]
+                    output.append(a + b)
+                    break
+                else:
+                    output.append(b)
+
+        return BufferList(output)
+
+
+# d=DMGCalc(value_type="CA",
+#         elem_type="cryo",
+#         level=81,
+#         basic_prop=CalcProp(atk_base=768.020,atk=2344.086),
+#         mutiplier=Multiplier(atk=392),
+#         crit_rate=0.392,
+#         crit_dmg=1.646,
+#         dmg_bonus=DMGBonus(cryo_dmg_bonus=0.826))
+# print(d.get_dmg("crit"))

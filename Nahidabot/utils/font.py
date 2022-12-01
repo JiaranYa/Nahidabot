@@ -1,5 +1,7 @@
 from PIL import ImageFont
+
 from Nahidabot.utils.path import FONT_PATH
+
 
 class Font(object):
     def __init__(self) -> None:

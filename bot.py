@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import nonebot
-from nonebot.log import logger
 from nonebot.adapters.onebot.v11 import Adapter as ONEBOT_V11Adapter
+from nonebot.log import logger
 
 # Custom your logger
-# 
+#
 # from nonebot.log import logger, default_format
 # logger.add("error.log",
 #            rotation="00:00",
@@ -26,7 +26,7 @@ driver.register_adapter(ONEBOT_V11Adapter)
 nonebot.load_from_toml("pyproject.toml")
 
 # Modify some config / config depends on loaded configs
-# 
+#
 # config = driver.config
 # do something...
 
