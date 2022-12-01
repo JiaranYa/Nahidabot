@@ -19,7 +19,7 @@ from Nahidabot.utils.file import load_json
 factor_map = asyncio.run(load_json(path="./base_factor.json"))
 
 
-class DMGCalc(object):
+class DMGCalc:
     """
     伤害计算器
     """
@@ -45,9 +45,9 @@ class DMGCalc(object):
         trans_matrix: TransMatList = TransMatList([TransMat(t_mat=np.identity(9))]),
     ) -> None:
 
-        self.value_type: Literal["NA", "CA", "PA", "E", "Q", "H", "S", ""] = value_type  # type: ignore
+        self.value_type: Literal["NA", "CA", "PA", "E", "Q", "H", "S", ""] = value_type
         """数值类型:NA-普攻 CA-重击 PA-下落攻击 E-战技 Q-爆发 H-治疗 S-护盾"""
-        self.elem_type: Literal["phy", "pyro", "electro", "hydro", "dendro", "anemo", "geo", "cryo", ""] = elem_type  # type: ignore
+        self.elem_type: Literal["phy", "pyro", "electro", "hydro", "dendro", "anemo", "geo", "cryo", ""] = elem_type
         """元素类型"""
         self.level = level
         """等级"""
@@ -268,6 +268,7 @@ class DMGCalc(object):
         )
 
     def reaction_zone(self, reaction):
+        """反应区"""
         if reaction in ["火蒸发", "冰融化", "水蒸发", "火融化"]:
             return self.rea_factor + 2.78 * self.prop.elem_mastery / (
                 self.prop.elem_mastery + 1400
