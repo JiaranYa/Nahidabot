@@ -11,7 +11,7 @@ from PIL import Image
 from Nahidabot.utils.path import AKASHA_STORE_URL, GRAPHIC_PATH
 
 
-async def load_json(path: Union[str, Path], encoding: str = "utf-8") -> dict:
+def load_json(path: Union[str, Path], encoding: str = "utf-8") -> dict:
     """
     读取json文件
     @params
@@ -23,8 +23,8 @@ async def load_json(path: Union[str, Path], encoding: str = "utf-8") -> dict:
     if isinstance(path, str):
         path = Path(path)
     if path.exists():
-        async with aiofiles.open(path, encoding=encoding) as f:
-            return json.loads(await f.read())
+        with open(path, encoding=encoding) as f:
+            return json.loads(f.read())
     else:
         return {}
 

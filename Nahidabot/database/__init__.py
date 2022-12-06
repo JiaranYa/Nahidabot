@@ -14,7 +14,7 @@ DATABASE = {
     },
     "apps": {
         "resource": {
-            "models": ["Nahidabot.database.models.resource"],
+            "models": ["Nahidabot.database.models.rolestatic"],
             "default_connection": "database",
         },
         "data": {

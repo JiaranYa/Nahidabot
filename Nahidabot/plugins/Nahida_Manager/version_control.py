@@ -8,7 +8,7 @@ from nonebot.matcher import Matcher
 from nonebot.permission import SUPERUSER
 from nonebot.rule import to_me
 
-from Nahidabot.database.models.resource import RoleBasicInfo
+from Nahidabot.database.models import RoleBasicInfo
 from Nahidabot.utils.path import GITHUB_URL, NAHIDABOT_URL, VERION_FILE, VERSION_PATH
 
 check_version = on_command(

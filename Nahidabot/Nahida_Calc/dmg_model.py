@@ -1,10 +1,9 @@
-import asyncio
-from typing import List, Literal, Union
+from typing import Literal, Union
 
 import numpy as np
 
 from Nahidabot.utils.classmodel import (
-    Buff,
+    BuffList,
     CalcProp,
     DMGBonus,
     FixValue,
@@ -12,11 +11,34 @@ from Nahidabot.utils.classmodel import (
     PropBuff,
     PropTensor,
     TransMat,
-    TransMatList,
 )
 from Nahidabot.utils.file import load_json
 
-factor_map = asyncio.run(load_json(path="./base_factor.json"))
+factor_map = load_json(path="./base_factor.json")
+
+ValueType = Literal["NA", "CA", "PA", "E", "Q", "H", "S", ""]
+ElemType = Literal[
+    "phy", "pyro", "electro", "hydro", "dendro", "anemo", "geo", "cryo", ""
+]
+ReaType = Literal[
+    "火蒸发",
+    "冰融化",
+    "水蒸发",
+    "火融化",
+    "蔓激化",
+    "超激化",
+    "燃烧",
+    "超导",
+    "扩散",
+    "感电",
+    "碎冰",
+    "超载",
+    "原绽放",
+    "烈绽放",
+    "超绽放",
+    "结晶",
+    "",
+]
 
 
 class DMGCalc:
@@ -26,8 +48,9 @@ class DMGCalc:
 
     def __init__(
         self,
-        value_type="",
-        elem_type="",
+        value_type: ValueType = "",
+        elem_type: ElemType = "",
+        reaction_type: ReaType = "",
         level: int = 90,
         basic_prop: CalcProp = CalcProp(),
         mutiplier: Multiplier = Multiplier(),
@@ -42,18 +65,23 @@ class DMGCalc:
         def_piercing: float = 0,
         fix_value: FixValue = FixValue(),
         reaction_factor: float = 1,
-        trans_matrix: TransMatList = TransMatList([TransMat(t_mat=np.identity(9))]),
+        trans_matrix: TransMat = TransMat().initialise(),
     ) -> None:
 
-        self.value_type: Literal["NA", "CA", "PA", "E", "Q", "H", "S", ""] = value_type
+        self.value_type: ValueType = value_type
         """数值类型:NA-普攻 CA-重击 PA-下落攻击 E-战技 Q-爆发 H-治疗 S-护盾"""
-        self.elem_type: Literal["phy", "pyro", "electro", "hydro", "dendro", "anemo", "geo", "cryo", ""] = elem_type
+        self.elem_type: ElemType = elem_type
         """元素类型"""
+        self.reaction_type: ReaType = reaction_type
+        """元素反应类型：\\
+        剧变："燃烧", "超导", "扩散", "感电", "碎冰", "超载", "原绽放", "烈绽放", "超绽放", "结晶"\\
+        增幅："火蒸发", "冰融化", "水蒸发", "火融化", "蔓激化", "超激化"
+        """
         self.level = level
         """等级"""
         self.basic_prop = basic_prop
         """攻击/生命/防御"""
-        self.mutiplier = mutiplier
+        self.multiplier = mutiplier
         """倍率"""
         self.crit_rate = crit_rate
         """暴击率"""
@@ -84,7 +112,11 @@ class DMGCalc:
         """
 
     def set(
-        self, value_type="", elem_type="", mutiplier: Union[Multiplier, None] = None
+        self,
+        value_type: ValueType = "",
+        elem_type: ElemType = "",
+        reaction_type: ReaType = "",
+        mutiplier: Union[Multiplier, None] = None,
     ):
         """
         函数：复制/设定伤害属性
@@ -98,7 +130,8 @@ class DMGCalc:
         return DMGCalc(
             value_type=value_type if value_type else self.value_type,
             elem_type=elem_type if elem_type else self.elem_type,
-            mutiplier=mutiplier if mutiplier else self.mutiplier,
+            reaction_type=reaction_type if reaction_type else self.reaction_type,
+            mutiplier=mutiplier if mutiplier else self.multiplier,
             level=self.level,
             basic_prop=self.basic_prop,
             crit_rate=self.crit_rate,
@@ -130,7 +163,7 @@ class DMGCalc:
         def_piercing: float = 0,
         extra_fixvalue: FixValue = FixValue(),
         extra_reaction_coeff: float = 0,
-        extra_trans_matrix: TransMatList = TransMatList(),
+        extra_trans_matrix: TransMat = TransMat(),
     ):
         """
         函数：获取增益后的面板数值
@@ -141,9 +174,10 @@ class DMGCalc:
         return DMGCalc(
             value_type=self.value_type,
             elem_type=self.elem_type,
+            reaction_type=self.reaction_type,
             level=self.level,
             basic_prop=self.basic_prop + extra_prop,
-            mutiplier=self.mutiplier + extra_mutiplier,
+            mutiplier=self.multiplier + extra_mutiplier,
             crit_rate=self.crit_rate + extra_crit_rate,
             crit_dmg=self.crit_dmg + extra_crit_dmg,
             elem_mastery=self.elem_mastery + extra_elem_mastery,
@@ -158,18 +192,18 @@ class DMGCalc:
             trans_matrix=self.matrix_list + extra_trans_matrix,
         )
 
-    @property
-    def dmg_bonus(self) -> float:
-        if self.elem_type in "phy":
-            return self.dmg_bonus_list[self.elem_type] + self.dmg_bonus_list["all"]
-        elif self.elem_type:
-            return (
-                self.dmg_bonus_list[self.elem_type]
-                + self.dmg_bonus_list["elem"]
-                + self.dmg_bonus_list["all"]
-            )
-        else:
-            return 0
+    # @property
+    # def dmg_bonus(self) -> float:
+    #     if self.elem_type in "phy":
+    #         return self.dmg_bonus_list[self.elem_type] + self.dmg_bonus_list["all"]
+    #     elif self.elem_type:
+    #         return (
+    #             self.dmg_bonus_list[self.elem_type]
+    #             + self.dmg_bonus_list["elem"]
+    #             + self.dmg_bonus_list["all"]
+    #         )
+    #     else:
+    #         return 0
 
     @property
     def prop(self):
@@ -187,16 +221,16 @@ class DMGCalc:
                 self.recharge,
                 self.dmg_bonus_list[self.elem_type],
                 self.healing,
+                0,
             ]
         )
         # 属性向量
         #     0-生命值    1-攻击力    2-防御力
         #     3-精通      4-暴击      5-暴伤
         #     6-充能      7-增伤      8-治疗
-        output: np.ndarray = np.zeros(9)
-        tm: TransMat
-        for tm in self.matrix_list:
-            output += np.dot(row_vec - tm.mask, tm.t_mat)
+        #     9-攻击倍率
+        output: np.ndarray = np.zeros(10)
+        output += np.dot(row_vec - self.matrix_list.mask, self.matrix_list.t_mat)
 
         if self.elem_type in "phy":
             dmg_bonus = output[7] + self.dmg_bonus_list["all"]
@@ -217,16 +251,17 @@ class DMGCalc:
             recharge=output[6],
             dmg_bonus=dmg_bonus,
             healing=output[8],
+            multiplier=Multiplier(atk=output[9]) + self.multiplier,
         )
 
     @property
     def base_value(self):
         """"""
         return (
-            self.prop.hp * self.mutiplier.hp
-            + self.prop.atk * self.mutiplier.atk
-            + self.prop.defend * self.mutiplier.defend
-            + self.prop.elem_mastery * self.mutiplier.em
+            self.prop.hp * self.prop.multiplier.hp
+            + self.prop.atk * self.prop.multiplier.atk
+            + self.prop.defend * self.prop.multiplier.defend
+            + self.prop.elem_mastery * self.prop.multiplier.em
         ) / 100
 
     @property
@@ -267,17 +302,18 @@ class DMGCalc:
             + (1 - self.def_piercing) * (1 + self.def_resistance) * (90 + 100)
         )
 
-    def reaction_zone(self, reaction):
+    @property
+    def reaction_zone(self):
         """反应区"""
-        if reaction in ["火蒸发", "冰融化", "水蒸发", "火融化"]:
+        if self.reaction_type in ["火蒸发", "冰融化", "水蒸发", "火融化"]:
             return self.rea_factor + 2.78 * self.prop.elem_mastery / (
                 self.prop.elem_mastery + 1400
             )
-        elif reaction in ["蔓激化", "超激化"]:
+        elif self.reaction_type in ["蔓激化", "超激化"]:
             return self.rea_factor + 5 * self.prop.elem_mastery / (
                 self.prop.elem_mastery + 1200
             )
-        elif reaction == "结晶":
+        elif self.reaction_type == "结晶":
             return self.rea_factor + 4.44 * self.prop.elem_mastery / (
                 self.prop.elem_mastery + 1400
             )
@@ -319,26 +355,17 @@ class DMGCalc:
         Amplifying Reactions
         """
         if reaction_type in ["火蒸发", "冰融化"]:
-            return 1.5 * self.reaction_zone(reaction_type) * self.get_dmg(mode)
+            return 1.5 * self.reaction_zone * self.get_dmg(mode)
         elif reaction_type in ["水蒸发", "火融化"]:
-            return 2 * self.reaction_zone(reaction_type) * self.get_dmg(mode)
+            return 2 * self.reaction_zone * self.get_dmg(mode)
         elif reaction_type in ["蔓激化"]:
-            boost = (
-                factor_map["TransReac"][self.level]
-                * 1.25
-                * self.reaction_zone(reaction_type)
-            )
+            boost = factor_map["TransReac"][self.level] * 1.25 * self.reaction_zone
             return self.buff(extra_fixvalue=FixValue(dmg=boost)).get_dmg(mode=mode)
         elif reaction_type in ["超激化"]:
-            boost = (
-                factor_map["TransReac"][self.level]
-                * 1.15
-                * self.reaction_zone(reaction_type)
-            )
+            boost = factor_map["TransReac"][self.level] * 1.15 * self.reaction_zone
             return self.buff(extra_fixvalue=FixValue(dmg=boost)).get_dmg(mode=mode)
-        else:
-            # print("错误调用get_amp_reac_dmg，这不是增幅反应")
-            return self.get_dmg(mode)
+        # print("错误调用get_amp_reac_dmg，这不是增幅反应")
+        return self.get_dmg(mode)
 
     def get_trans_reac_dmg(
         self,
@@ -365,7 +392,7 @@ class DMGCalc:
             return (
                 factor_list[reaction_type]
                 * factor_map["TransReac"][self.level]
-                * self.reaction_zone(reaction_type)
+                * self.reaction_zone
                 * self.elem_res_zone
             )
         else:
@@ -374,7 +401,9 @@ class DMGCalc:
 
     def get_crystall_shield(self):
         """结晶盾"""
-        return factor_map["Cryst"][self.level] * self.reaction_zone("结晶")
+        if self.reaction_zone == "结晶":
+            return factor_map["Cryst"][self.level] * self.reaction_zone
+        return 0
 
     def get_healing(self):
         """治疗量"""
@@ -384,19 +413,21 @@ class DMGCalc:
         """盾量"""
         return self.base_value + self.fix_value.shield
 
-    def __add__(self, other: "BufferList"):
+    def __add__(self, other: BuffList):
         output = self.set()
-        buff: Buff
-        for buff in other:
-            if output.value_type in buff.value_type:
+        for buff in other.buff:
+            if (
+                output.value_type in buff.value_type
+                and output.reaction_type in buff.reaction_type
+            ):
                 if output.elem_type == "phy":
-                    if any(e in buff.elem_type for e in ["phy", "all"]):
+                    if any(e in buff.elem_type for e in ["all", "phy"]):
                         pass
                     else:
                         break
                 else:
                     if any(
-                        e in buff.elem_type for e in [output.elem_type, "elem", "all"]
+                        e in buff.elem_type for e in ["all", "elem", output.elem_type]
                     ):
                         pass
                     else:
@@ -423,34 +454,23 @@ class DMGCalc:
         return output
 
 
-class BufferList(List[Buff]):
-    """增益缓存表"""
+# class BufferList(List[Buff]):
+#     """增益缓存表"""
 
-    def __init__(self, buff: List[Buff]):
-        super().__init__(buff)
+#     def __init__(self, buff: List[Buff]):
+#         super().__init__(buff)
 
-    def __add__(self, other: "BufferList"):
-        output = self.copy()
-        adder = other.copy()
-        for i, a in enumerate(output):
-            for j, b in enumerate(adder):
-                if a.value_type == b.value_type and a.elem_type == b.elem_type:
-                    del output[i]
-                    del adder[j]
-                    output.append(a + b)
-                    break
-                else:
-                    output.append(b)
+#     def __add__(self, other: "BufferList"):
+#         output = self.copy()
+#         adder = other.copy()
+#         for i, a in enumerate(output):
+#             for j, b in enumerate(adder):
+#                 if a.value_type == b.value_type and a.elem_type == b.elem_type:
+#                     del output[i]
+#                     del adder[j]
+#                     output.append(a + b)
+#                     break
+#                 else:
+#                     output.append(b)
 
-        return BufferList(output)
-
-
-# d=DMGCalc(value_type="CA",
-#         elem_type="cryo",
-#         level=81,
-#         basic_prop=CalcProp(atk_base=768.020,atk=2344.086),
-#         mutiplier=Multiplier(atk=392),
-#         crit_rate=0.392,
-#         crit_dmg=1.646,
-#         dmg_bonus=DMGBonus(cryo_dmg_bonus=0.826))
-# print(d.get_dmg("crit"))
+#         return BufferList(output)

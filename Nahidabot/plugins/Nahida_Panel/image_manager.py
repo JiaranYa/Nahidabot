@@ -13,13 +13,12 @@ info_panel = on_command("面板", rule=to_me(), priority=5, block=True)
 @info_panel.handle()
 async def _(event: MessageEvent, msg: Message = CommandArg()):
     feedback = Message()
-    [uid,] = await Player.filter(
-        user_qq=event.user_id
-    ).values_list("uid", flat=True)
+    (uid,) = await Player.filter(user_qq=event.user_id).values_list("uid", flat=True)
     # TODO: 角色名来自于查询命令
-    [
-        role,
-    ] = await PropList.filter(user_qq=event.user_id, uid=uid, role_name="雷电将军").all()
+
+    (role,) = await PropList.filter(
+        user_qq=event.user_id, uid=uid, role_name="雷电将军"
+    ).all()
     if img := await draw_role_info(role):
         feedback += img
         await info_panel.finish(feedback)
@@ -27,10 +26,16 @@ async def _(event: MessageEvent, msg: Message = CommandArg()):
         await info_panel.finish("没有该角色信息")
 
 
-# dmg_panel = on_command("伤害",rule=to_me(),priority=5,block=True)
+dmg_panel = on_command("伤害", rule=to_me(), aliases={"test"}, priority=5, block=True)
 
-# @dmg_panel.handle()
-# async def _(event:MessageEvent,msg:Message = CommandArg()):
-#     from Nahida_Calc.role import dmg_info
 
-#     dmg_info()
+@dmg_panel.handle()
+async def _(event: MessageEvent, msg: Message = CommandArg()):
+    from Nahidabot.Nahida_Calc.role_model import RoleModel
+
+    role = RoleModel(name="雷电将军")
+    await role.update_from_database(user_qq=event.get_user_id())
+    await role.get_buff()
+    await role.get_dmg()
+
+    pass

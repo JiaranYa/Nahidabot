@@ -1,6 +1,5 @@
-from asyncio import run
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from nonebot.adapters.onebot.v11 import MessageSegment
 from PIL import Image
@@ -23,7 +22,7 @@ bg_color_map = {
     "Rock": "#bb9f4b",
     "Ice": "#46a8ba",
 }
-prop_map = run(load_json(STATIC_PATH / "property.json"))
+prop_map = load_json(STATIC_PATH / "property.json")
 
 background_file = "background/overlay.jpg"
 gacha_file = Path("Avatarfig")
@@ -35,15 +34,16 @@ others_file = Path("others")
 
 
 async def draw_role_info(info_data: PropList):
-    prop_map = await load_json(STATIC_PATH / "property.json")
+    prop_map = load_json(STATIC_PATH / "property.json")
 
     role = Role(
         name=info_data.role_name,
         talent=info_data.talent,  # type: ignore
         fight_prop=info_data.property,  # type: ignore
         weapon=info_data.weapon,  # type: ignore
-        artifacts=info_data.artifacts,
-    )  # type: ignore
+        artifacts=info_data.artifacts,  # type: ignore
+        scores=info_data.scores,  # type: ignore
+    )
     img = ShowImage(
         image=(await load_img(background_file))
         .transpose(Image.ROTATE_270)
@@ -292,13 +292,13 @@ async def draw_role_info(info_data: PropList):
         await img.paste(image=skill_case, pos=(350, 510))
 
     # 圣遗物
-    if items := role.artifacts:
-        for i, item in enumerate(
-            [items, items.flower, items.plume, items.sands, items.goblet, items.circlet]
+    if (items := role.artifacts) and (score := role.scores):
+        for i, key in enumerate(
+            ["total", "flower", "plume", "sands", "goblet", "circlet"]
         ):
-            if item:
+            if item := items.get_item(key):
                 await img.paste(
-                    await get_relic_case(item),
+                    await get_relic_case(item, role.scores.get_score(key)),
                     pos=(20 + (i % 3) * 260, 800 + int(i / 3) * 260),
                 )
 
@@ -306,18 +306,18 @@ async def draw_role_info(info_data: PropList):
 
 
 # 圣遗物小模块
-async def get_relic_case(item: Union[Relic, Relicset]):
+async def get_relic_case(item: Union[Relic, dict], score: Optional[float]):
     box = ShowImage(size=(250, 250), color="#0001")
-    if isinstance(item, Relicset):
+    if isinstance(item, dict):
         await box.text(
-            rarity_rating(item.total_score),
+            rarity_rating(score),
             width=(0, 250),
             height=0,
             font=Font().get("Yozai", size=80),
             align="center",
         )
         await box.text(
-            item.total_score,
+            score if score else 0,
             width=(0, 250),
             height=100,
             font=Font().get("Yozai", size=40),
@@ -325,7 +325,7 @@ async def get_relic_case(item: Union[Relic, Relicset]):
         )
 
         count = 0
-        for key, value in item.set_info.items():
+        for key, value in item.items():
             if value >= 2:
                 await box.text(
                     key,
@@ -359,13 +359,13 @@ async def get_relic_case(item: Union[Relic, Relicset]):
         )
 
         await box.text(
-            rarity_rating(item.score),
+            rarity_rating(score),
             width=80,
             height=40,
             font=Font().get("Yozai", size=30),
         )
         await box.text(
-            item.score if item.score else 0,
+            score if score else 0,
             width=(180, 250),
             height=40,
             font=Font().get("Yozai", size=25),

@@ -9,6 +9,7 @@ from Nahidabot.utils.classmodel import (
     PropertySlot,
     PropInfo,
     Relic,
+    RelicScore,
     Relicset,
     RoleInfo,
     Weapon,
@@ -16,7 +17,7 @@ from Nahidabot.utils.classmodel import (
 from Nahidabot.utils.file import load_json
 from Nahidabot.utils.path import STATIC_PATH
 
-from .resource import RoleBasicInfo
+from .rolestatic import RoleBasicInfo
 
 
 class Player(Model):
@@ -77,11 +78,15 @@ class PropList(Model):
     artifacts = fields.JSONField(
         encoder=Relicset.json, decoder=Relicset.parse_raw, description="圣遗物", null=True
     )
-    buff_info = fields.JSONField(
-        encoder=BuffList.json, decoder=BuffList.parse_raw, description="增益列表", null=True
+    scores = fields.JSONField(
+        encoder=RelicScore.json,
+        decoder=RelicScore.parse_raw,
+        description="圣遗物分数",
+        null=True,
     )
-    dmg_info = fields.JSONField(description="伤害数据", null=True)
-    dmg_setting = fields.JSONField(description="伤害设置", null=True)
+    buff_info = fields.JSONField(description="增益列表", default=[])
+    dmg_info = fields.JSONField(description="伤害数据", default=[])
+    dmg_setting = fields.JSONField(description="伤害设置", default=[])
 
     class Meta:
         table = "role_property"
@@ -89,12 +94,12 @@ class PropList(Model):
 
     @classmethod
     async def insert_or_update_role(cls, uid: str, data_list: list[dict], user_qq: str):
-        weapon_map = await load_json(STATIC_PATH / "weapon.json")
-        artifact_map = await load_json(STATIC_PATH / "artifact.json")
+        weapon_map = load_json(STATIC_PATH / "weapon.json")
+        artifact_map = load_json(STATIC_PATH / "artifact.json")
 
         for data in data_list:
             role_info: RoleInfo
-            [role_info,] = await RoleBasicInfo.filter(
+            (role_info,) = await RoleBasicInfo.filter(
                 aid=str(data["avatarId"])
             ).values_list("info", flat=True)
             role_name = role_info.name
@@ -212,5 +217,4 @@ class PropList(Model):
                     elif temp_relic.slot == "EQUIP_DRESS":
                         relic_list.circlet = temp_relic
             role.artifacts = relic_list
-
             await role.save()

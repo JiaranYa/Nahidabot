@@ -17,6 +17,7 @@ class RoleBasicInfo(Model):
     index = fields.IntField(pk=True, generated=True, auto_increment=True)
     aid = fields.CharField(max_length=8, unique=True)
     """角色id"""
+    name = fields.CharField(max_length=16, unique=True, null=True)
     info = fields.JSONField(
         encoder=RoleInfo.json, decoder=RoleInfo.parse_raw, null=True
     )
@@ -28,7 +29,7 @@ class RoleBasicInfo(Model):
 
     @classmethod
     async def update_infotable(cls):
-        role_table: dict[str, dict] = await load_json(ROLE_TABLE_PATH)
+        role_table: dict[str, dict] = load_json(ROLE_TABLE_PATH)
         for key, value in role_table.items():
             roleinfo = RoleInfo(
                 name=value["Name"],
@@ -43,7 +44,7 @@ class RoleBasicInfo(Model):
 
             path: WindowsPath = SCALING_TABLE_PATH / (value["Abbr"] + ".json")
             if path.is_file():
-                scaling_table = await load_json(path)
+                scaling_table = load_json(path)
                 ((_, contents),) = scaling_table.items()
                 multiplier_table_list = []
                 for index, cont in enumerate(contents):
@@ -57,5 +58,6 @@ class RoleBasicInfo(Model):
                 roleinfo.scaling_table = multiplier_table_list
 
             role, _ = await cls.get_or_create(aid=key)
+            role.name = value["Name"]
             role.info = roleinfo
             await role.save()

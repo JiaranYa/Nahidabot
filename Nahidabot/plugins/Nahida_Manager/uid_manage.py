@@ -47,7 +47,7 @@ async def _(event: MessageEvent):
     ).values_list("uid", "update_time")
     if (
         datetime.utcnow().replace(tzinfo=timezone.utc) - update_time
-    ).total_seconds() < 600:
+    ).total_seconds() != 600:  # TODO:修改小于
         await uid_update.finish("请等待10分钟再更新")
     else:
         data = await update_from_enka(uid=uid)
@@ -56,10 +56,10 @@ async def _(event: MessageEvent):
 
 
 async def update_display_box(uid, data, user_qq):
-    await Player.insert_or_update(uid=uid, data=data.playerInfo, user_qq=user_qq)
     await PropList.insert_or_update_role(
         uid=uid, data_list=data.avatarInfoList, user_qq=user_qq
     )
+    await Player.insert_or_update(uid=uid, data=data.playerInfo, user_qq=user_qq)
     logger.opt(colors=True).success(f"已更新{uid}的信息")
 
 

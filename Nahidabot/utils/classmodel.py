@@ -1,6 +1,7 @@
 from typing import Dict, List, Literal, Optional, Union
 
 import numpy as np
+from nonebot.log import logger
 from pydantic import BaseModel, Field
 
 # 以下用于数据获取存储
@@ -307,8 +308,6 @@ class Relic(BaseModel):
     """副属性"""
     rank: int
     """稀有度"""
-    score: Optional[float] = None
-    """圣遗物评分"""
 
 
 class Relicset(BaseModel):
@@ -337,17 +336,61 @@ class Relicset(BaseModel):
                 dic[setname] = dic.setdefault(setname, 0) + 1
         return dic
 
+    def get_item(self, key):
+        if key == "total":
+            return self.set_info
+        if key == "flower":
+            return self.flower
+        if key == "plume":
+            return self.plume
+        if key == "sands":
+            return self.sands
+        if key == "goblet":
+            return self.goblet
+        if key == "circlet":
+            return self.circlet
+
+
+# 以下用于计算
+class RelicScore(BaseModel):
+    """
+    圣遗物评分
+    """
+
+    flower: Optional[float] = None
+    """生之花"""
+    plume: Optional[float] = None
+    """死之羽"""
+    sands: Optional[float] = None
+    """时之沙"""
+    goblet: Optional[float] = None
+    """空之杯"""
+    circlet: Optional[float] = None
+    """理之冠"""
+
     @property
     def total_score(self) -> float:
         """圣遗物总分"""
         score = 0
-        for slot in [self.flower, self.plume, self.sands, self.goblet, self.circlet]:
-            if (item := slot) is not None:
-                score += item.score if item.score else 0
+        for s in [self.flower, self.plume, self.sands, self.goblet, self.circlet]:
+            score += s if s else 0
         return score
 
+    def get_score(self, key):
+        if key == "total":
+            return self.total_score
+        if key == "flower":
+            return self.flower
+        if key == "plume":
+            return self.plume
+        if key == "sands":
+            return self.sands
+        if key == "goblet":
+            return self.goblet
+        if key == "circlet":
+            return self.circlet
 
-# 以下用于计算
+
 class CalcProp(BaseModel):
     """基础属性（三围）"""
 
@@ -375,18 +418,6 @@ class CalcProp(BaseModel):
         )
 
 
-class PropTensor(BaseModel):
-    hp: float
-    atk: float
-    defend: float
-    elem_mastery: float
-    crit_rate: float
-    crit_dmg: float
-    recharge: float
-    dmg_bonus: float
-    healing: float
-
-
 class Multiplier(BaseModel):
     """倍率"""
 
@@ -406,6 +437,19 @@ class Multiplier(BaseModel):
             defend=self.defend + other.defend,
             em=self.em + other.em,
         )
+
+
+class PropTensor(BaseModel):
+    hp: float
+    atk: float
+    defend: float
+    elem_mastery: float
+    crit_rate: float
+    crit_dmg: float
+    recharge: float
+    dmg_bonus: float
+    healing: float
+    multiplier: Multiplier
 
 
 class PropBuff(BaseModel):
@@ -448,15 +492,43 @@ class TransMat(BaseModel):
         0-生命值    1-攻击力    2-防御力
         3-精通      4-暴击      5-暴伤
         6-充能      7-增伤      8-治疗
+        9-倍率
     """
 
     class Config:
         arbitrary_types_allowed = True
 
-    mask: np.ndarray = Field(default_factory=lambda: 0)
+    mask: Union[np.ndarray, int] = Field(default_factory=lambda: 0)
     """阈值矩阵"""
-    t_mat: np.ndarray = Field(default_factory=lambda: 0)
+    t_mat: Union[np.ndarray, int] = Field(default_factory=lambda: 0)
     """属性转移矩阵"""
+
+    def initialise(self):
+        """"""
+        self.t_mat = np.identity(10)
+        return self
+
+    def set_mask(self, pos: list[float], value: list[float]):
+        """"""
+        if len(pos) != len(value):
+            logger.opt(colors=True).error("pos 和 value 长度需相等")
+            return self
+
+        self.mask = np.zeros(10)
+        for i, m in enumerate(pos):
+            self.mask[m] = value[i]
+        return self
+
+    def set_matrix(self, pos: list[tuple[int, int]], value: list[float]):
+        """"""
+        if len(pos) != len(value):
+            logger.opt(colors=True).error("pos 和 value 长度需相等")
+            return self
+
+        self.t_mat = np.zeros((10, 10))
+        for i, (m, n) in enumerate(pos):
+            self.t_mat[m, n] = value[i]
+        return self
 
     def __add__(self, other: "TransMat"):
         if np.allclose(self.mask, other.mask):
@@ -465,24 +537,24 @@ class TransMat(BaseModel):
             raise ValueError("阈值矩阵不同，相加失败")
 
 
-class TransMatList(List[TransMat]):
-    """"""
+# class TransMatList(List[TransMat]):
+#     """"""
 
-    def __init__(self, inputs: list[TransMat] = [TransMat()]):
-        super().__init__(inputs)
+#     def __init__(self, inputs: list[TransMat] = [TransMat()]):
+#         super().__init__(inputs)
 
-    def __add__(self, other: "TransMatList"):
-        output = self.copy()
-        adder = other.copy()
-        for i, m_pair in enumerate(output):
-            for j, m_add in enumerate(adder):
-                if np.allclose(m_pair.mask, m_add.mask):
-                    del output[i]
-                    del adder[j]
-                    output.append(m_pair + m_add)
-                else:
-                    output.append(m_add)
-        return TransMatList(output)
+#     def __add__(self, other: "TransMatList"):
+#         output = self.copy()
+#         adder = other.copy()
+#         for i, m_pair in enumerate(output):
+#             for j, m_add in enumerate(adder):
+#                 if np.allclose(m_pair.mask, m_add.mask):
+#                     del output[i]
+#                     del adder[j]
+#                     output.append(m_pair + m_add)
+#                 else:
+#                     output.append(m_add)
+#         return TransMatList(output)
 
 
 class DmgInfo(BaseModel):
@@ -571,7 +643,7 @@ class Buff(BaseModel):
     """"""
     reaction_coeff: float = 0
     """"""
-    trans_matrix_list: TransMatList = TransMatList()
+    trans_matrix_list: TransMat = TransMat()
     """"""
 
     def __add__(self, other: "Buff"):
@@ -617,7 +689,7 @@ class BuffSetting(BaseModel):
     """描述"""
     label: int = 0
     """设置"""
-    state: list = []
+    state: str = ""
 
 
 class BuffList(BaseModel):
@@ -625,8 +697,8 @@ class BuffList(BaseModel):
 
     source: str = ""
     """增益来源"""
-    is_from_party: bool = False
-    """是否为友方增益"""
+    from_party_member: str = ""
+    """友方增益来源"""
     buff: List[Buff] = []
     """增益器列表"""
     setting: List[BuffSetting] = []
@@ -650,9 +722,11 @@ class Role(BaseModel):
     """角色武器信息"""
     artifacts: Optional[Relicset] = None
     """角色圣遗物信息"""
-    buff_list: Optional[List[BuffList]] = None
+    scores: Optional[RelicScore] = None
+    """圣遗物评分"""
+    buff_list: List[BuffList] = []
     """增益表"""
-    dmg_setting: Optional[List[DmgSetting]] = None
+    dmg_setting: List[DmgSetting] = []
     """伤害设置信息"""
-    damage: Optional[List[DmgInfo]] = None
+    damage: List[DmgInfo] = []
     """伤害信息"""
