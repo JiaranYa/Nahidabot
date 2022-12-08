@@ -1,13 +1,21 @@
 from Nahidabot.database.models import Player, PropList, RoleBasicInfo
-from Nahidabot.utils.classmodel import Role, RoleInfo
+from Nahidabot.utils.classmodel import BuffInfo, Role, RoleInfo
 
-from .relics import relic_buff
+from .dmg_model import DMGCalc
+from .relics import artifacts, artifacts_setting
 from .role import role_buff, role_dmg
 from .weapon import weapon_buff
 
 
 class RoleModel(Role):
     """角色计算模型"""
+
+    propbuff: list[BuffInfo] = []
+    """面板型增益"""
+    transbuff: list[BuffInfo] = []
+    """转移型增益"""
+    dmgbuff: list[BuffInfo] = []
+    """伤害型增益"""
 
     async def update_from_database(self, user_qq):
         """从数据库更新"""
@@ -42,3 +50,32 @@ class RoleModel(Role):
     async def get_dmg(self):
         self.damage = await role_dmg(self)
         pass
+
+    @property
+    def calculator(self):
+        """战斗实时面板"""
+        return (
+            DMGCalc(self.fight_prop, self.talent.level)
+            + self.propbuff
+            + self.transbuff
+            + self.dmgbuff
+        )
+
+    async def setting(self) -> list[BuffInfo]:
+        """获取增益设置"""
+        return []
+
+    async def buff(self) -> list[BuffInfo]:
+        """获取增益"""
+        return []
+
+    async def get_setting(self):
+        """获取增益设定"""
+        await self.setting()
+        await artifacts_setting(self.artifacts, self.buff_list)
+
+    def get_buff(self):
+        """"""
+
+    def get_dmg(self):
+        """"""

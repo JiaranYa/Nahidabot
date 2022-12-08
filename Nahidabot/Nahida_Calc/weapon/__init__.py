@@ -10,7 +10,7 @@ async def weapon_buff(role: Role):
         logger.opt(colors=True).error("获取武器增益信息不足")
         return []
 
-    buff_info = BuffList()
+    buff_info = BuffInfo()
     for buff in role.buff_list:
         if buff.source == "武器":
             buff_info = buff

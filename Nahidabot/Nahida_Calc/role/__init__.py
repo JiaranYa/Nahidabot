@@ -3,7 +3,7 @@ from nonebot.log import logger
 from .Shougun import *
 
 
-async def role_dmg(role: Role) -> list[DmgInfo]:
+async def role_dmg(role: Role) -> list[DMG]:
     if role.fight_prop is None or role.talent is None or role.scaling_table is None:
         logger.opt(colors=True).error("获取角色增益信息不足")
         return []
@@ -16,7 +16,7 @@ async def role_dmg(role: Role) -> list[DmgInfo]:
         return []
 
 
-async def role_buff(role: Role) -> list[BuffList]:
+async def role_buff(role: Role) -> list[BuffInfo]:
     if role.fight_prop is None or role.talent is None or role.scaling_table is None:
         logger.opt(colors=True).error("获取角色增益信息不足")
         return []
@@ -31,7 +31,7 @@ async def role_buff(role: Role) -> list[BuffList]:
         return []
 
 
-async def role_setting(role: Role) -> list[BuffList]:
+async def role_setting(role: Role) -> list[BuffInfo]:
     if role.talent is None or role.scaling_table is None:
         logger.opt(colors=True).error("获取角色增益信息不足")
         return []

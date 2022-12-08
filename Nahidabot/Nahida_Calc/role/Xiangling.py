@@ -3,12 +3,12 @@ from typing import Optional
 import numpy as np
 
 from Nahidabot.utils.classmodel import (
+    DMG,
     Buff,
-    BuffList,
+    BuffInfo,
     BuffSetting,
     CalcProp,
     DMGBonus,
-    DmgInfo,
     FightProp,
     FixValue,
     Multiplier,

@@ -2,298 +2,156 @@ from nonebot.log import logger
 
 from Nahidabot.utils.classmodel import (
     Buff,
-    BuffList,
+    BuffInfo,
     BuffSetting,
     DMGBonus,
     PropBuff,
     PropInfo,
     Relicset,
-    Role,
 )
 
-
-async def relic_buff(role: Role):
-    if role.artifacts is None or role.talent is None or role.buff_list is None:
-        logger.opt(colors=True).error("获取圣遗物增益信息不足")
-        return []
-
-    buff_info = BuffList()
-    for buff in role.buff_list:
-        if buff.source == "圣遗物":
-            buff_info = buff
-    try:
-
-        return await artifacts(role.artifacts, buff_info, role.talent)
-    except NameError:
-        return []
+from .dmg_model import DMGCalc, reserve_setting
 
 
-async def artifacts(relic: Relicset, buff_info: BuffList, talent: PropInfo):
+async def artifacts(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
     """
     提供圣遗物buff
     Args:
-        relic:
-        setting:
-        is_setting:
+        buff_list:
+        talent:
+        prop:
     """
+    for buff_info in buff_list:
+        setting = buff_info.setting
 
-    output = BuffList(source="圣遗物")
-    for name, num in relic.set_info.items():
-
-        if name == "战狂":
-            if num >= 4:
-                # 生成设置
-                setting = BuffSetting(
-                    name="战狂4",
-                    dsc="角色生命||⓪高于70%（×）：无增益；①低于70（✓）：暴击+24%",
-                    label=1,
-                )
-                for s in buff_info.setting:
-                    if s.name == "战狂4":
-                        setting = s
-                # 生成增益
-                if setting.label == 0:
-                    setting.state = "×"
-                else:
-                    setting.state = "✓"
-                    output.buff.append(
-                        Buff(name="战狂4", dsc="角色生命<70%,暴击+24%", crit_rate=0.24)
-                    )
-                output.setting.append(setting)
-
-        if name == "行者之心":
-            if num >= 4:
-                # 生成增益
-                output.buff.append(
-                    Buff(
-                        name="行者4",
-                        dsc="重击暴击+30%",
-                        value_type="CA",
-                        crit_rate=0.3,
-                    )
+        if buff_info.name == "战狂4":
+            if setting.label == 0:
+                setting.state = "×"
+            else:
+                setting.state = "✓"
+                buff_info.buff = Buff(
+                    dsc="角色生命<70%,暴击+24%",
+                    crit_rate=0.24,
                 )
 
-        if name == "勇士之心":
-            if num >= 4:
-                # 生成设置
-                setting = BuffSetting(
-                    name="勇士4",
-                    dsc="敌方生命||⓪低于50%（×）：无增益；①高于50（✓）：增伤+30%",
-                    label=1,
-                )
-                for s in buff_info.setting:
-                    if s.name == "勇士4":
-                        setting = s
-                # 生成增益
-                if setting.label == 0:
-                    setting.state = "×"
-                else:
-                    setting.state = "✓"
-                    output.buff.append(
-                        Buff(
-                            name="勇士4",
-                            dsc="敌方生命>50%，增伤+30%",
-                            dmg_bonus=DMGBonus(all=0.3),
-                        )
-                    )
-                output.setting.append(setting)
+        if buff_info.name == "行者4":
+            buff_info.buff = Buff(
+                dsc="重击暴击+30%",
+                target="CA",
+                crit_rate=0.3,
+            )
 
-        if name == "教官":
-            if num >= 4:
-                # 生成设置
-                setting = BuffSetting(
-                    name="教官4",
-                    dsc="元素反应||⓪未触发（×）：无增益；①触发（✓）：全队精通+120",
-                    label=1,
-                )
-                for s in buff_info.setting:
-                    if s.name == "教官4":
-                        setting = s
-                # 生成增益
-                if setting.label == 0:
-                    setting.state = "×"
-                else:
-                    setting.state = "✓"
-                    output.buff.append(
-                        Buff(
-                            name="教官4",
-                            dsc="触发反应8s内，精通+120",
-                            member_type="all",
-                            elem_mastery=120,
-                        )
-                    )
-                output.setting.append(setting)
-
-        if name == "赌徒":
-            if num >= 2:
-                # 生成增益
-                output.buff.append(
-                    Buff(
-                        name="赌徒2",
-                        dsc="元素战技增伤+30%",
-                        value_type="E",
-                        dmg_bonus=DMGBonus(all=0.3),
-                    )
+        if buff_info.name == "勇士4":
+            if setting.label == 0:
+                setting.state = "×"
+            else:
+                setting.state = "✓"
+                buff_info.buff = Buff(
+                    dsc="敌方生命>50%，增伤+30%",
+                    dmg_bonus=0.3,
                 )
 
-        if name == "武人":
-            if num >= 2:
-                # 生成增益
-                output.buff.append(
-                    Buff(
-                        name="武人2",
-                        dsc="普攻与重击增伤+15%",
-                        value_type=["NA", "CA"],
-                        dmg_bonus=DMGBonus(all=0.15),
-                    )
+        if buff_info.name == "教官4":
+            if setting.label == 0:
+                setting.state = "×"
+            else:
+                setting.state = "✓"
+                buff_info.buff = Buff(
+                    dsc="触发反应8s内，精通+120",
+                    elem_mastery=120,
                 )
 
-            if num >= 4:
-                # 生成设置
-                setting = BuffSetting(
-                    name="武人4",
-                    dsc="元素战技||⓪未施放（×）：无增益；①施放（✓）：普攻与重击增伤+25%",
-                    label=1,
+        if buff_info.name == "赌徒2":
+            buff_info.buff = Buff(
+                dsc="元素战技增伤+30%",
+                target="E",
+                dmg_bonus=0.3,
+            )
+
+        if buff_info.name == "武人2":
+            buff_info.buff = Buff(
+                dsc="普攻与重击增伤+15%",
+                target=["NA", "CA"],
+                dmg_bonus=0.15,
+            )
+
+        if buff_info.name == "武人4":
+            if setting.label == 0:
+                setting.state = "×"
+            else:
+                setting.state = "✓"
+                buff_info.buff = Buff(
+                    dsc="施放元素战技8秒内，普攻与重击增伤+25%",
+                    target=["NA", "CA"],
+                    dmg_bonus=0.25,
                 )
-                for s in buff_info.setting:
-                    if s.name == "武人4":
-                        setting = s
-                # 生成增益
-                if setting.label == 0:
-                    setting.state = "×"
-                else:
-                    setting.state = "✓"
-                    output.buff.append(
-                        Buff(
-                            name="武人4",
-                            dsc="施放元素战技8秒内，普攻与重击增伤+25%",
-                            dmg_bonus=DMGBonus(all=0.25),
-                        )
-                    )
-                output.setting.append(setting)
 
-        if name == "冰风迷途的勇士":
-            if num >= 4:
-                # 生成设置
-                setting = BuffSetting(
-                    name="冰风4",
-                    dsc="敌方状态||⓪其余（×）：无增益；①冰附着：暴击+20%；②冻结：暴击+40%",
-                    label=2,
+        if buff_info.name == "冰风4":
+            if setting.label == 0:
+                setting.state = "×"
+            elif setting.label == 1:
+                setting.state = "冰附着"
+                buff_info.buff = Buff(
+                    dsc="敌人冰附着，暴击+20%",
+                    crit_rate=0.2,
                 )
-                for s in buff_info.setting:
-                    if s.name == "冰风4":
-                        setting = s
-                # 生成增益
-                if setting.label == 0:
-                    setting.state = "×"
-                if setting.label == 1:
-                    setting.state = "冰附着"
-                    output.buff.append(
-                        Buff(
-                            name="冰风4",
-                            dsc="敌人冰附着，暴击+20%",
-                            crit_rate=0.2,
-                        )
-                    )
-                else:
-                    setting.state = "冻结"
-                    output.buff.append(
-                        Buff(
-                            name="冰风4",
-                            dsc="敌人冻结，暴击+40%",
-                            crit_rate=0.4,
-                        )
-                    )
-                output.setting.append(setting)
-
-        if name == "平息鸣雷的尊者":
-            if num >= 4:
-                # 生成设置
-                setting = BuffSetting(
-                    name="平雷4",
-                    dsc="敌方状态||⓪其余（×）：无增益；①雷附着（✓）：增伤+35%",
-                    label=1,
+            else:
+                setting.state = "冻结"
+                buff_info.buff = Buff(
+                    dsc="敌人冻结，暴击+40%",
+                    crit_rate=0.4,
                 )
-                for s in buff_info.setting:
-                    if s.name == "平雷4":
-                        setting = s
-                # 生成增益
-                if setting.label == 0:
-                    setting.state = "×"
-                else:
-                    setting.state = "✓"
-                    output.buff.append(
-                        Buff(
-                            name="平雷4", dsc="敌人雷附着，增伤+35%", dmg_bonus=DMGBonus(all=0.35)
-                        )
-                    )
-                output.setting.append(setting)
 
-        if name == "渡过烈火的贤人":
-            if num >= 4:
-                # 生成设置
-                setting = BuffSetting(
-                    name="渡火4",
-                    dsc="敌方状态||⓪其余（×）：无增益；①火附着（✓）：增伤+35%",
-                    label=1,
+        if buff_info.name == "平雷4":
+            if setting.label == 0:
+                setting.state = "×"
+            else:
+                setting.state = "✓"
+                buff_info.buff = Buff(
+                    dsc="敌人雷附着，增伤+35%",
+                    dmg_bonus=0.35,
                 )
-                for s in buff_info.setting:
-                    if s.name == "渡火4":
-                        setting = s
-                # 生成增益
-                if setting.label == 0:
-                    setting.state = "×"
-                else:
-                    setting.state = "✓"
-                    output.buff.append(
-                        Buff(
-                            name="渡火4", dsc="敌人火附着，增伤+35%", dmg_bonus=DMGBonus(all=0.35)
-                        )
-                    )
-                output.setting.append(setting)
 
-        if name == "被怜爱的少女":
-            if num >= 4:
-                # 生成设置
-                setting = BuffSetting(
-                    name="少女4",
-                    dsc="元素战技或元素爆发||⓪未施放（×）：无增益；①施放（✓）：全队受治疗+20%",
-                    label=1,
+        if buff_info.name == "渡火4":
+            if setting.label == 0:
+                setting.state = "×"
+            else:
+                setting.state = "✓"
+                buff_info.buff = Buff(
+                    dsc="敌人火附着，增伤+35%",
+                    dmg_bonus=0.35,
                 )
-                for s in buff_info.setting:
-                    if s.name == "少女4":
-                        setting = s
-                # 生成增益
-                if setting.label == 0:
-                    setting.state = "×"
-                else:
-                    setting.state = "✓"
-                    output.buff.append(
-                        Buff(
-                            name="少女4",
-                            dsc="施放元素战技或元素爆发10秒内，全队受治疗+20%",
-                            member_type="all",
-                            healing=0.2,
-                        )
-                    )
-                output.setting.append(setting)
 
-        if name == "角斗士的终幕礼":
-            if num >= 4:
-                # 生成增益
-                if talent.weapon_type in ["单手剑", "长柄", "双手剑"]:
-                    output.buff.append(
-                        Buff(
-                            name="角斗4",
-                            dsc="单手剑，长柄，双手剑角色，普攻增伤+35%",
-                            value_type="NA",
-                            dmg_bonus=DMGBonus(all=0.35),
-                        )
-                    )
+        if buff_info.name == "少女4":
+            if setting.label == 0:
+                setting.state = "×"
+            else:
+                setting.state = "✓"
+                buff_info.buff = Buff(
+                    target="H",
+                    dsc="施放元素战技或元素爆发10秒内，全队受治疗+20%",
+                    healing=0.2,
+                )
 
-        # TODO:翠绿之影
-        if name == "翠绿之影":
-            pass
+        if buff_info.name == "角斗4":
+            if talent.weapon_type in ["单手剑", "长柄", "双手剑"]:
+                buff_info.buff = Buff(
+                    dsc="单手剑，长柄，双手剑角色，普攻增伤+35%",
+                    target="NA",
+                    dmg_bonus=0.35,
+                )
+
+        if buff_info.name == "翠绿4-1":
+            buff_info.buff = Buff(
+                dsc="扩散反应系数+60%",
+                elem_type=["pyro","electro","hydro","cryo"],
+                reaction_type="扩散",
+                reaction_coeff=0.6,
+            )
+
+        if buff_info.name == "翠绿4-2":
+            if 0 in setting.label:
+                
 
         if name == "流浪大地的乐团":
             if num >= 4:
@@ -306,8 +164,8 @@ async def artifacts(relic: Relicset, buff_info: BuffList, talent: PropInfo):
                         Buff(
                             name="角斗4",
                             dsc="弓，法器角色，重击增伤+35%",
-                            value_type="CA",
-                            dmg_bonus=DMGBonus(all=0.35),
+                            target="CA",
+                            elem_dmg_bonus=DMGBonus(all=0.35),
                         )
                     )
 
@@ -325,9 +183,9 @@ async def artifacts(relic: Relicset, buff_info: BuffList, talent: PropInfo):
                 output.buff.append(
                     Buff(
                         name="宗室2",
-                        value_type="Q",
+                        target="Q",
                         dsc="元素爆发增伤+20％",
-                        dmg_bonus=DMGBonus(all=0.2),
+                        elem_dmg_bonus=DMGBonus(all=0.2),
                     )
                 )
 
@@ -338,7 +196,7 @@ async def artifacts(relic: Relicset, buff_info: BuffList, talent: PropInfo):
                     dsc="元素爆发||⓪未施放（×）：无增益；①施放（✓）：全队攻击+20%",
                     label=1,
                 )
-                for s in buff_info.setting:
+                for s in buff_list.setting:
                     if s.name == "宗室4":
                         setting = s
 
@@ -356,8 +214,176 @@ async def artifacts(relic: Relicset, buff_info: BuffList, talent: PropInfo):
                     )
                 output.setting.append(setting)
 
-    return [output]
+    return buff_list
 
 
-def artifacts_setting():
+async def artifacts_setting(relics: Relicset, buff_list: list[BuffInfo]):
     """"""
+    output: list[BuffInfo] = []
+    labels = reserve_setting(buff_list)
+
+    for i, (name, num) in enumerate(relics.set_info.items()):
+        source = f"圣遗物#{i+1}"
+        source2 = f"圣遗物#{i+2}"
+
+        if name == "战狂":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="战狂4",
+                        setting=BuffSetting(
+                            dsc="角色生命||⓪高于70%（×）：无增益；①低于70（✓）：暴击+24%",
+                            label=labels.get("战狂4", 1),
+                        ),
+                    )
+                )
+
+        if name == "行者之心":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="行者4",
+                    )
+                )
+
+        if name == "勇士之心":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="勇士4",
+                        setting=BuffSetting(
+                            dsc="敌方生命||⓪低于50%（×）：无增益；①高于50（✓）：增伤+30%",
+                            label=labels.get("勇士4", 1),
+                        ),
+                    )
+                )
+
+        if name == "教官":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="教官4",
+                        range="all",
+                        buff_type="propbuff",
+                        setting=BuffSetting(
+                            dsc="元素反应||⓪未触发（×）：无增益；①触发（✓）：全队精通+120",
+                            label=labels.get("教官4", 1),
+                        ),
+                    )
+                )
+
+        if name == "赌徒":
+            if num >= 2:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="赌徒2",
+                    )
+                )
+
+        if name == "武人":
+            if num >= 2:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="武人2",
+                    )
+                )
+
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source2,
+                        name="武人4",
+                        setting=BuffSetting(
+                            dsc="元素战技||⓪未施放（×）：无增益；①施放（✓）：普攻与重击增伤+25%",
+                            label=labels.get("武人4", 1),
+                        ),
+                    )
+                )
+
+        if name == "冰风迷途的勇士":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="冰风4",
+                        setting=BuffSetting(
+                            dsc="敌方状态||⓪其余（×）：无增益；①冰附着：暴击+20%；②冻结：暴击+40%",
+                            label=labels.get("冰风4", 2),
+                        ),
+                    )
+                )
+
+        if name == "平息鸣雷的尊者":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="平雷4",
+                        setting=BuffSetting(
+                            dsc="敌方状态||⓪其余（×）：无增益；①雷附着（✓）：增伤+35%",
+                            label=labels.get("平雷4", 1),
+                        ),
+                    )
+                )
+
+        if name == "渡过烈火的贤人":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="渡火4",
+                        setting=BuffSetting(
+                            dsc="敌方状态||⓪其余（×）：无增益；①火附着（✓）：增伤+35%",
+                            label=labels.get("渡火4", 1),
+                        ),
+                    )
+                )
+
+        if name == "被怜爱的少女":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="少女4",
+                        setting=BuffSetting(
+                            dsc="元素战技或元素爆发||⓪未施放（×）：无增益；①施放（✓）：全队受治疗+20%",
+                            label=labels.get("少女4", 1),
+                        ),
+                    )
+                )
+
+        if name == "角斗士的终幕礼":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="角斗4",
+                    )
+                )
+
+        if name == "翠绿之影":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="翠绿4-1",
+                    )
+                )
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="翠绿4-2",
+                        setting=BuffSetting(
+                            dsc="",
+                            label=labels.get("翠绿4-2", 1),
+                        ),
+                    )
+                )
+
+    return output

@@ -155,10 +155,6 @@ class DMGBonus(BaseModel):
     """岩元素伤害加成"""
     cryo: float = 0
     """冰元素伤害加成"""
-    all: float = 0
-    """无条件伤害加成"""
-    elem: float = 0
-    """元素伤害加成"""
 
     def __add__(self, other: "DMGBonus"):
         return DMGBonus(
@@ -170,8 +166,6 @@ class DMGBonus(BaseModel):
             anemo=self.anemo + other.anemo,
             geo=self.geo + other.geo,
             cryo=self.cryo + other.cryo,
-            all=self.all + other.all,
-            elem=self.elem + other.elem,
         )
 
     def __getitem__(self, key: str):
@@ -327,9 +321,9 @@ class Relicset(BaseModel):
     """理之冠"""
 
     @property
-    def set_info(self) -> dict:
+    def set_info(self):
         """套装信息"""
-        dic = {}
+        dic: dict[str, int] = {}
         for slot in [self.flower, self.plume, self.sands, self.goblet, self.circlet]:
             if (item := slot) is not None:
                 setname: str = item.set
@@ -391,33 +385,6 @@ class RelicScore(BaseModel):
             return self.circlet
 
 
-class CalcProp(BaseModel):
-    """基础属性（三围）"""
-
-    hp_base: float = 0
-    """基础生命值"""
-    hp: float = 0
-    """生命值上限"""
-    atk_base: float = 0
-    """基础攻击力"""
-    atk: float = 0
-    """攻击力"""
-    def_base: float = 0
-    """基础防御力"""
-    defend: float = 0
-    """防御力"""
-
-    def __add__(self, other: "PropBuff"):
-        return CalcProp(
-            hp_base=self.hp_base,
-            atk_base=self.atk_base,
-            def_base=self.def_base,
-            hp=self.hp + other.hp_fix + self.hp_base * other.hp_percent,
-            atk=self.atk + other.atk_fix + self.atk_base * other.atk_percent,
-            defend=self.defend + other.def_fix + self.def_base * other.def_percent,
-        )
-
-
 class Multiplier(BaseModel):
     """倍率"""
 
@@ -437,19 +404,6 @@ class Multiplier(BaseModel):
             defend=self.defend + other.defend,
             em=self.em + other.em,
         )
-
-
-class PropTensor(BaseModel):
-    hp: float
-    atk: float
-    defend: float
-    elem_mastery: float
-    crit_rate: float
-    crit_dmg: float
-    recharge: float
-    dmg_bonus: float
-    healing: float
-    multiplier: Multiplier
 
 
 class PropBuff(BaseModel):
@@ -486,78 +440,7 @@ class FixValue(BaseModel):
         )
 
 
-class TransMat(BaseModel):
-    """
-    转移矩阵
-        0-生命值    1-攻击力    2-防御力
-        3-精通      4-暴击      5-暴伤
-        6-充能      7-增伤      8-治疗
-        9-倍率
-    """
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    mask: Union[np.ndarray, int] = Field(default_factory=lambda: 0)
-    """阈值矩阵"""
-    t_mat: Union[np.ndarray, int] = Field(default_factory=lambda: 0)
-    """属性转移矩阵"""
-
-    def initialise(self):
-        """"""
-        self.t_mat = np.identity(10)
-        return self
-
-    def set_mask(self, pos: list[float], value: list[float]):
-        """"""
-        if len(pos) != len(value):
-            logger.opt(colors=True).error("pos 和 value 长度需相等")
-            return self
-
-        self.mask = np.zeros(10)
-        for i, m in enumerate(pos):
-            self.mask[m] = value[i]
-        return self
-
-    def set_matrix(self, pos: list[tuple[int, int]], value: list[float]):
-        """"""
-        if len(pos) != len(value):
-            logger.opt(colors=True).error("pos 和 value 长度需相等")
-            return self
-
-        self.t_mat = np.zeros((10, 10))
-        for i, (m, n) in enumerate(pos):
-            self.t_mat[m, n] = value[i]
-        return self
-
-    def __add__(self, other: "TransMat"):
-        if np.allclose(self.mask, other.mask):
-            return TransMat(mask=self.mask, t_mat=self.t_mat + other.t_mat)
-        else:
-            raise ValueError("阈值矩阵不同，相加失败")
-
-
-# class TransMatList(List[TransMat]):
-#     """"""
-
-#     def __init__(self, inputs: list[TransMat] = [TransMat()]):
-#         super().__init__(inputs)
-
-#     def __add__(self, other: "TransMatList"):
-#         output = self.copy()
-#         adder = other.copy()
-#         for i, m_pair in enumerate(output):
-#             for j, m_add in enumerate(adder):
-#                 if np.allclose(m_pair.mask, m_add.mask):
-#                     del output[i]
-#                     del adder[j]
-#                     output.append(m_pair + m_add)
-#                 else:
-#                     output.append(m_add)
-#         return TransMatList(output)
-
-
-class DmgInfo(BaseModel):
+class DMG(BaseModel):
     """"""
 
     index: int
@@ -567,6 +450,8 @@ class DmgInfo(BaseModel):
 
 
 class DmgSetting(BaseModel):
+    """"""
+
     index: int
     dsc: str = ""
     weight: float
@@ -575,21 +460,19 @@ class DmgSetting(BaseModel):
 class Buff(BaseModel):
     """增益器"""
 
-    name: str = ""
-    """增益名"""
     dsc: str = ""
     """增益描述"""
-    value_type: Union[List[str], str] = "ALL"
-    """伤害加成类型：
+    target: Union[List[str], str] = "ALL"
+    """增益目标：
         NA-普通攻击\\
         CA-重击\\
         PA-下落攻击\\
         A-普通攻击/重击/下落攻击\\
         E-元素战技\\
         Q-元素爆发\\
-        H-治疗\\
-        S-护盾\\
         ALL-所有类型\\
+        H-治疗\\
+        S-护盾
     """
     elem_type: Union[str, List[str]] = "all"
     """伤害元素类型：\\
@@ -604,21 +487,23 @@ class Buff(BaseModel):
         all-所有类型\\
         elem-元素增伤
     """
-    member_type: Union[str, List[str]] = "self"
-    """成员加成类型：\\
-        self-自身\\
-        party-其余友方成员\\
-        all-全部队伍成员\\
-        active-场上角色\\
-        off field-后台角色
+    triger_type: str = "all"
+    """触发类型：\\
+        all-均可触发\\
+        active-场上触发\\
+        off field-后台触发
     """
     reaction_type: Union[str, List[str]] = ""
     """元素反应类型：\\
         剧变："燃烧", "超导", "扩散", "感电", "碎冰", "超载", "原绽放", "烈绽放", "超绽放", "结晶"\\
         增幅："火蒸发", "冰融化", "水蒸发", "火融化", "蔓激化", "超激化"
     """
-    basic_prop: PropBuff = PropBuff()
-    """攻击/生命/防御增益"""
+    hp: float = 0
+    """生命增益"""
+    atk: float = 0
+    """攻击增益"""
+    defend: float = 0
+    """防御增益"""
     mutiplier: Multiplier = Multiplier()
     """倍率增益"""
     crit_rate: float = 0
@@ -628,11 +513,13 @@ class Buff(BaseModel):
     elem_mastery: float = 0
     """精通增益"""
     recharge: float = 0
-    """"""
-    dmg_bonus: DMGBonus = DMGBonus()
-    """"""
+    """充能增益"""
+    elem_dmg_bonus: DMGBonus = DMGBonus()
+    """元素伤害加成增益"""
     healing: float = 0
     """"""
+    dmg_bonus: float = 0
+    """增伤增益"""
     resist_reduction: float = 0
     """"""
     def_reduction: float = 0
@@ -643,39 +530,6 @@ class Buff(BaseModel):
     """"""
     reaction_coeff: float = 0
     """"""
-    trans_matrix_list: TransMat = TransMat()
-    """"""
-
-    def __add__(self, other: "Buff"):
-
-        if (
-            self.value_type == other.value_type
-            and self.elem_type == other.elem_type
-            and self.member_type == other.member_type
-            and self.reaction_type == other.reaction_type
-        ):
-            return Buff(
-                value_type=self.value_type,
-                elem_type=self.elem_type,
-                member_type=self.member_type,
-                reaction_type=self.reaction_type,
-                basic_prop=self.basic_prop + other.basic_prop,
-                mutiplier=self.mutiplier + other.mutiplier,
-                crit_rate=self.crit_rate + other.crit_rate,
-                crit_dmg=self.crit_dmg + other.crit_dmg,
-                elem_mastery=self.elem_mastery + other.elem_mastery,
-                recharge=self.recharge + other.recharge,
-                dmg_bonus=self.dmg_bonus + other.dmg_bonus,
-                healing=self.healing + other.healing,
-                resist_reduction=self.resist_reduction + other.resist_reduction,
-                def_reduction=self.def_reduction + other.def_reduction,
-                def_piercing=self.def_piercing + other.def_piercing,
-                fix_value=self.fix_value + other.fix_value,
-                reaction_coeff=self.reaction_coeff + other.reaction_coeff,
-                trans_matrix_list=self.trans_matrix_list + other.trans_matrix_list,
-            )
-        else:
-            raise ValueError("Buff不兼容，不可相加")
 
 
 class BuffSetting(BaseModel):
@@ -683,25 +537,48 @@ class BuffSetting(BaseModel):
     增益设置
     """
 
-    name: str = ""
-    """"""
     dsc: str = ""
     """描述"""
-    label: int = 0
+    label: Union[int, list[int]] = 0
     """设置"""
     state: str = ""
 
 
-class BuffList(BaseModel):
+class BuffInfo(BaseModel):
     """增益列表"""
 
     source: str = ""
     """增益来源"""
-    from_party_member: str = ""
-    """友方增益来源"""
-    buff: List[Buff] = []
+    name: str = ""
+    """增益名"""
+    range: str = "self"
+    """加成范围：\\
+        self-自身\\
+        party-其余友方成员\\
+        all-全部队伍成员
+    """
+    buff_type: str = "dmgbuff"
+    """增益类型：\\
+            propbuff-面板型增益
+            transbuff-转移型增益
+            dmgbuff-伤害型增益
+    """
+    # from_party_member: str = ""
+    # """友方增益来源"""
+    buff: Optional[Buff] = None
+    """增益器"""
+    setting: BuffSetting = BuffSetting()
+    """增益器设置"""
+
+
+class DMGInfo(BaseModel):
+    """"""
+
+    source: str = ""
+    """增益来源"""
+    dmg_info: DMG = DMG()
     """增益器列表"""
-    setting: List[BuffSetting] = []
+    setting: DmgSetting = DmgSetting()
     """增益器设置列表"""
 
 
@@ -724,9 +601,9 @@ class Role(BaseModel):
     """角色圣遗物信息"""
     scores: Optional[RelicScore] = None
     """圣遗物评分"""
-    buff_list: List[BuffList] = []
+    buff_list: List[BuffInfo] = []
     """增益表"""
     dmg_setting: List[DmgSetting] = []
     """伤害设置信息"""
-    damage: List[DmgInfo] = []
+    damage: List[DMG] = []
     """伤害信息"""

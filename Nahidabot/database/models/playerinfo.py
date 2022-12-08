@@ -2,7 +2,7 @@ from tortoise import fields
 from tortoise.models import Model
 
 from Nahidabot.utils.classmodel import (
-    BuffList,
+    BuffInfo,
     DMGBonus,
     FightProp,
     PlayerInfo,

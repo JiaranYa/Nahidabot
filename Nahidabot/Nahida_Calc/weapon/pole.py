@@ -1,8 +1,8 @@
-from Nahidabot.utils.classmodel import Buff, BuffList, BuffSetting, PropInfo, Weapon
+from Nahidabot.utils.classmodel import Buff, BuffInfo, BuffSetting, PropInfo, Weapon
 
 
-async def polearm(talent: PropInfo, weapon: Weapon, buff_info: BuffList):
-    output = BuffList(source="武器")
+async def polearm(talent: PropInfo, weapon: Weapon, buff_info: BuffInfo):
+    output = BuffInfo(source="武器")
 
     if weapon.name == "决斗之枪":
         # 生成设置
