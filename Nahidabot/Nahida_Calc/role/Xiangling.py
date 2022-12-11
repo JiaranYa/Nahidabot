@@ -12,7 +12,7 @@ from Nahidabot.utils.classmodel import (
     FightProp,
     FixValue,
     Multiplier,
-    PropBuff,
+    PoFValue,
     PropInfo,
     PropTensor,
     Role,

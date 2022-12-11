@@ -12,6 +12,7 @@ from nonebot.params import CommandArg
 from nonebot.rule import to_me
 
 from Nahidabot.database import Player, PropList
+from Nahidabot.Nahida_Calc import update_rolemodel
 from Nahidabot.utils.classmodel import EnkaInfo
 
 # *-----------------------------------------------*
@@ -42,24 +43,31 @@ uid_update = on_command("更新面板", rule=to_me(), priority=3, block=True)
 
 @uid_update.handle()
 async def _(event: MessageEvent):
-    [(uid, update_time),] = await Player.filter(
-        user_qq=event.user_id, is_main_uid=True
-    ).values_list("uid", "update_time")
+    try:
+        ((uid, update_time),) = await Player.filter(
+            user_qq=event.user_id, is_main_uid=True
+        ).values_list("uid", "update_time")
+    except ValueError:
+        await uid_update.finish("请先绑定uid")
+
     if (
         datetime.utcnow().replace(tzinfo=timezone.utc) - update_time
-    ).total_seconds() != 600:  # TODO:修改小于
+    ).total_seconds() == 600:  # TODO:修改小于
         await uid_update.finish("请等待10分钟再更新")
     else:
         data = await update_from_enka(uid=uid)
         await update_display_box(uid=uid, data=data, user_qq=event.user_id)
+        for role in data.avatarInfoList:
+            await update_rolemodel(user_qq=event.user_id, aid=role["avatarId"])
         await uid_update.finish("已更新完毕")
 
 
-async def update_display_box(uid, data, user_qq):
+async def update_display_box(uid, data: EnkaInfo, user_qq):
     await PropList.insert_or_update_role(
         uid=uid, data_list=data.avatarInfoList, user_qq=user_qq
     )
     await Player.insert_or_update(uid=uid, data=data.playerInfo, user_qq=user_qq)
+
     logger.opt(colors=True).success(f"已更新{uid}的信息")
 
 
@@ -72,6 +80,6 @@ async def update_from_enka(uid: str):
             info: dict = json.loads(await response.text())
             return EnkaInfo(
                 uid=uid,
-                playerInfo=info.get("playerInfo"),
-                avatarInfoList=info.get("avatarInfoList"),
+                playerInfo=info.get("playerInfo", {}),
+                avatarInfoList=info.get("avatarInfoList", []),
             )

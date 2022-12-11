@@ -1,6 +1,5 @@
-from typing import Literal, Optional, Union
+from typing import Literal
 
-import numpy as np
 
 from Nahidabot.utils.classmodel import (
     BuffInfo,
@@ -8,10 +7,7 @@ from Nahidabot.utils.classmodel import (
     FightProp,
     FixValue,
     Multiplier,
-    PropBuff,
-    PropInfo,
-    Relicset,
-    Weapon,
+    PoFValue,
 )
 from Nahidabot.utils.file import load_json
 
@@ -76,6 +72,12 @@ class DMGCalc:
         """攻击力"""
         self.defend = prop.defend
         """防御力"""
+        self.hp_base = prop.hp_base
+        """基础生命上限"""
+        self.atk_base = prop.atk_base
+        """基础攻击力"""
+        self.def_base = prop.def_base
+        """基础防御力"""
         self.multiplier = Multiplier()
         """倍率"""
         self.crit_rate = prop.crit_rate
@@ -140,9 +142,9 @@ class DMGCalc:
 
     def buff(
         self,
-        extra_hp: float = 0,
-        extra_atk: float = 0,
-        extra_def: float = 0,
+        extra_hp: PoFValue = PoFValue(),
+        extra_atk: PoFValue = PoFValue(),
+        extra_def: PoFValue = PoFValue(),
         extra_mutiplier: Multiplier = Multiplier(),
         extra_crit_rate: float = 0,
         extra_crit_dmg: float = 0,
@@ -162,9 +164,9 @@ class DMGCalc:
         @params: 面板增益数值
         @returns: 新面板数值
         """
-        self.hp += extra_hp
-        self.atk += extra_atk
-        self.defend += extra_def
+        self.hp += extra_hp.fix + extra_hp.percent * self.hp_base
+        self.atk += extra_atk.fix + extra_atk.percent * self.atk_base
+        self.defend += extra_def.fix + extra_def.percent * self.def_base
         self.multiplier += extra_mutiplier
         self.crit_rate += extra_crit_rate
         self.crit_dmg += extra_crit_dmg
@@ -383,56 +385,9 @@ class DMGCalc:
         return output
 
 
-class RoleModel:
-    name: str
-    """角色名"""
-    scaling_table: Multiplier
-    """倍率表"""
-    talent: PropInfo
-    """"""
-    attribute: FightProp
-    """静态面板"""
-    weapon: Optional[Weapon] = None
-    """角色武器信息"""
-    artifacts: Optional[Relicset] = None
-    """角色圣遗物信息"""
-    propbuff: list[BuffInfo] = []
-    """面板型增益"""
-    transbuff: list[BuffInfo] = []
-    """转移型增益"""
-    dmgbuff: list[BuffInfo] = []
-    """伤害型增益"""
-
-    def __init__(self):
-        """"""
-
-    @property
-    def calculator(self):
-        """战斗实时面板"""
-        Xingqiu = DMGCalc(self.attribute, self.talent.level)
-        return Xingqiu + self.propbuff + self.transbuff + self.dmgbuff
-
-    async def setting(self) -> list[BuffInfo]:
-        """获取增益设置"""
-        return []
-
-    async def buff(self) -> list[BuffInfo]:
-        """获取增益"""
-        return []
-
-    def get_setting(self):
-        """获取增益设定"""
-
-    def get_buff(self):
-        """"""
-
-    def get_dmg(self):
-        """"""
-
-
 def reserve_setting(buff_list: list[BuffInfo]):
     """保留设置"""
-    output: dict[str, int] = {}
+    output: dict[str, str] = {}
     for buff in buff_list:
-        output.update({buff.name: buff.setting.label})
+        output |= {buff.name: buff.setting.label}
     return output

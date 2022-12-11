@@ -1,9 +1,11 @@
+import json
+
 from tortoise import fields
 from tortoise.models import Model
 
 from Nahidabot.utils.classmodel import (
     BuffInfo,
-    DMGBonus,
+    BuffList,
     FightProp,
     PlayerInfo,
     PropertySlot,
@@ -18,6 +20,20 @@ from Nahidabot.utils.file import load_json
 from Nahidabot.utils.path import STATIC_PATH
 
 from .rolestatic import RoleBasicInfo
+
+# def buff_json(buff_list: list[BuffInfo]) -> str:
+#     output = []
+#     for buff in buff_list:
+#         output.append(BuffInfo.json(buff))
+#     return json.dumps(output)
+
+
+# def buff_parse_raw(string: str) -> list[BuffInfo]:
+#     output = []
+#     buff_list: list = json.loads(string)
+#     for buff in buff_list:
+#         output.append(BuffInfo.parse_raw(buff))
+#     return output
 
 
 class Player(Model):
@@ -84,7 +100,13 @@ class PropList(Model):
         description="圣遗物分数",
         null=True,
     )
-    buff_info = fields.JSONField(description="增益列表", default=[])
+    party_member = fields.JSONField(description="队友", default=[])
+    buff_info = fields.JSONField(
+        encoder=BuffList.encoder,
+        decoder=BuffList.decoder,
+        description="增益列表",
+        default=[],
+    )
     dmg_info = fields.JSONField(description="伤害数据", default=[])
     dmg_setting = fields.JSONField(description="伤害设置", default=[])
 
