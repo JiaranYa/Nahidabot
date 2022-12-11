@@ -3,13 +3,7 @@ from Nahidabot.utils.classmodel import (
     Buff,
     BuffInfo,
     BuffSetting,
-    DMGBonus,
-    FightProp,
-    FixValue,
     Multiplier,
-    PropInfo,
-    Role,
-    SkillMultiplier,
 )
 
 from ..dmg_model import reserve_setting, reserve_weight

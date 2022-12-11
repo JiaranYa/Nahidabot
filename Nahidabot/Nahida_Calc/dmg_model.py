@@ -347,10 +347,10 @@ class DMGCalc:
             if (buff := buff_info.buff) is None:
                 continue
 
-            if (
-                output.value_type not in buff.target
-                or output.reaction_type not in buff.reaction_type
-            ):
+            if output.reaction_type not in buff.reaction_type:
+                break
+
+            if all(e not in buff.target for e in ["ALL", output.value_type]):
                 break
 
             if output.member_type == "active" and "off" in buff.triger_type:
