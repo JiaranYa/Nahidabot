@@ -38,5 +38,6 @@ async def update_rolemodel(user_qq, aid):
             await partner.load_buff(buff_list, mode=mode)
 
     role_info = await PropList.get(user_qq=user_qq, uid=uid, role_name=info.name)
-    role_info.buff_info = await party_list[0].save_buff()
+    role_info.buff_info = await role.save_buff()
+    role_info.dmg_info = await role.get_dmg()
     await role_info.save()

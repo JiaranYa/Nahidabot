@@ -1,8 +1,6 @@
 import json
 from typing import Literal, Optional, Union
 
-import numpy as np
-from nonebot.log import logger
 from pydantic import BaseModel, parse_raw_as
 
 # 以下用于数据获取存储
@@ -433,23 +431,6 @@ class FixValue(BaseModel):
         )
 
 
-class DMG(BaseModel):
-    """"""
-
-    index: int
-    dsc: str = ""
-    exp_hit: int = 0
-    crit_hit: int = 0
-
-
-class DmgSetting(BaseModel):
-    """"""
-
-    index: int
-    dsc: str = ""
-    weight: float
-
-
 class Buff(BaseModel):
     """增益器"""
 
@@ -564,11 +545,43 @@ class BuffInfo(BaseModel):
     """增益器设置"""
 
 
-class DMGInfo(BaseModel):
+class DMG(BaseModel):
     """"""
 
+    index: int
+    """序号"""
     source: str = ""
-    """增益来源"""
+    """数值来源"""
+    name: str = ""
+    """"""
+    type: str = "D"
+    """类型：
+        D：伤害
+        H：治疗
+        S：护盾
+    """
+    dsc: str = ""
+    """描述"""
+    exp_value: int = 0
+    """"""
+    crit_value: int = 0
+    """"""
+    weight: int = 0
+    """权重 0-10"""
+
+    # class DmgSetting(BaseModel):
+    #     """"""
+
+    #     dsc: str = ""
+    #     """"""
+    #     weight: float
+    #     """"""
+
+    # class DMGInfo(BaseModel):
+    #     """"""
+
+    # source: str = ""
+    # """增益来源"""
     # dmg_info: DMG = DMG()
     # """增益器列表"""
     # setting: DmgSetting = DmgSetting()
@@ -598,9 +611,9 @@ class Role(BaseModel):
     """队友"""
     buff_list: list[BuffInfo] = []
     """增益表"""
-    dmg_setting: list[DmgSetting] = []
-    """伤害设置信息"""
-    damage: list[DMG] = []
+    # dmg_setting: list[DmgSetting] = []
+    # """伤害设置信息"""
+    dmg_list: list[DMG] = []
     """伤害信息"""
 
 
@@ -611,4 +624,14 @@ class BuffList(BaseModel):
 
     @classmethod
     def decoder(cls, json_data):
-        return parse_raw_as(list[cls], json_data)
+        return parse_raw_as(list[BuffInfo], json_data)
+
+
+class DMGList(BaseModel):
+    @classmethod
+    def encoder(cls, models: list["DMG"]):
+        return json.dumps(models, default=cls.dict)
+
+    @classmethod
+    def decoder(cls, json_data):
+        return parse_raw_as(list[DMG], json_data)

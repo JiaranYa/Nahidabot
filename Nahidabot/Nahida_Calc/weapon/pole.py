@@ -10,7 +10,7 @@ from Nahidabot.utils.classmodel import (
 from ..dmg_model import DMGCalc, reserve_setting
 
 
-async def polearm(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
+async def Polearm(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
     # ============================
     # ************五星*************
     # ============================
@@ -43,7 +43,7 @@ async def polearm(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
     return buff_list
 
 
-async def polearm_setting(weapon: Weapon, buff_list: list[BuffInfo], name: str):
+async def Polearm_setting(weapon: Weapon, buff_list: list[BuffInfo], name: str):
     output: list[BuffInfo] = []
     labels = reserve_setting(buff_list)
 

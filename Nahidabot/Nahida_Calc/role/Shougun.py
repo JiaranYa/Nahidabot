@@ -1,7 +1,5 @@
 from typing import Optional
 
-import numpy as np
-
 from Nahidabot.utils.classmodel import (
     DMG,
     Buff,
@@ -11,13 +9,13 @@ from Nahidabot.utils.classmodel import (
     FightProp,
     FixValue,
     Multiplier,
-    PoFValue,
     PropInfo,
     Role,
     SkillMultiplier,
 )
 
-from ..dmg_model import DMGCalc
+from ..dmg_model import reserve_setting
+from .role_model import RoleModel
 
 # async def Shougun(
 #     talent: PropInfo,

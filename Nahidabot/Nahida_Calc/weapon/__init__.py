@@ -2,10 +2,14 @@ from typing import Optional
 
 from nonebot.log import logger
 
-from Nahidabot.utils.classmodel import PropInfo, Weapon, BuffInfo
+from Nahidabot.utils.classmodel import BuffInfo, PropInfo, Weapon
 
 from ..dmg_model import DMGCalc
-from .pole import polearm, polearm_setting
+from .bow import Bow, Bow_setting
+from .cata import Catalyst, Catalyst_setting
+from .claym import Claymore, Claymore_setting
+from .pole import Polearm, Polearm_setting
+from .sword import Sword, Sword_setting
 
 
 async def weapon_buff(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
@@ -18,28 +22,37 @@ async def weapon_buff(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc
         if buff.source == "武器":
             buff_info.append(buff)
 
-    if talent.weapon_type == "长柄":
-        return await polearm(buff_list=buff_info, talent=talent, prop=prop)
+    if talent.weapon_type == "单手剑":
+        return await Sword(buff_list=buff_info, talent=talent, prop=prop)
+    elif talent.weapon_type == "弓":
+        return await Bow(buff_list=buff_info, talent=talent, prop=prop)
+    elif talent.weapon_type == "长柄":
+        return await Polearm(buff_list=buff_info, talent=talent, prop=prop)
+    elif talent.weapon_type == "双手剑":
+        return await Claymore(buff_list=buff_info, talent=talent, prop=prop)
+    elif talent.weapon_type == "法器":
+        return await Catalyst(buff_list=buff_info, talent=talent, prop=prop)
 
     return []
 
 
 async def weapon_setting(
-    weapon: Optional[Weapon],
+    weapon: Weapon,
     talent: PropInfo,
     buff_list: list[BuffInfo],
     name: str = "",
 ):
     """"""
+
     if talent.weapon_type == "单手剑":
-        return []
+        return await Sword_setting(weapon=weapon, buff_list=buff_list, name=name)
     elif talent.weapon_type == "弓":
-        return []
+        return await Bow_setting(weapon=weapon, buff_list=buff_list, name=name)
     elif talent.weapon_type == "长柄":
-        return await polearm_setting(weapon=weapon, buff_list=buff_list, name=name)
+        return await Polearm_setting(weapon=weapon, buff_list=buff_list, name=name)
     elif talent.weapon_type == "双手剑":
-        return []
+        return await Claymore_setting(weapon=weapon, buff_list=buff_list, name=name)
     elif talent.weapon_type == "法器":
-        return []
-    else:
-        return []
+        return await Catalyst_setting(weapon=weapon, buff_list=buff_list, name=name)
+
+    return []

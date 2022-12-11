@@ -1,7 +1,8 @@
+from copy import deepcopy
 from typing import Literal
 
-
 from Nahidabot.utils.classmodel import (
+    DMG,
     BuffInfo,
     DMGBonus,
     FightProp,
@@ -116,6 +117,9 @@ class DMGCalc:
         self.rea_factor = 1
         """反应系数加成"""
 
+    def copy(self):
+        return deepcopy(self)
+
     def set(
         self,
         value_type: ValueType = "",
@@ -125,13 +129,13 @@ class DMGCalc:
         multiplier: Multiplier = Multiplier(),
     ):
         """
-        函数：复制/设定伤害属性
-        Args:
-            value_type  :数值类型
-            elem_type   :伤害元素类型
+        函数：复制/设定伤害属性\\
+        *Args:
+            value_type  : 数值类型
+            elem_type   : 伤害元素类型
+            member_type ： 是否脱手
+            reaction_type ： 反应类型
             multiplier   :倍率
-        Returns:
-            新伤害属性
         """
         self.value_type = value_type
         self.elem_type = elem_type
@@ -338,15 +342,14 @@ class DMGCalc:
         return self.base_value + self.fix_value.shield
 
     def __add__(self, other: list[BuffInfo]):
-        output = self.set()
+        output = self.copy()
         for buff_info in other:
-            buff = buff_info.buff
             if (buff := buff_info.buff) is None:
                 continue
 
             if (
                 output.value_type not in buff.target
-                and output.reaction_type not in buff.reaction_type
+                or output.reaction_type not in buff.reaction_type
             ):
                 break
 
@@ -390,4 +393,12 @@ def reserve_setting(buff_list: list[BuffInfo]):
     output: dict[str, str] = {}
     for buff in buff_list:
         output |= {buff.name: buff.setting.label}
+    return output
+
+
+def reserve_weight(dmg_list: list[DMG]):
+    """保留权重"""
+    output: dict[str, int] = {}
+    for dmg in dmg_list:
+        output |= {dmg.name: dmg.weight}
     return output
