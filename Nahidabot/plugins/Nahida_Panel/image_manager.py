@@ -26,16 +26,16 @@ async def _(event: MessageEvent, msg: Message = CommandArg()):
         await info_panel.finish("没有该角色信息")
 
 
-dmg_panel = on_command("伤害", rule=to_me(), aliases={"test"}, priority=5, block=True)
+dmg_panel = on_command("设置", rule=to_me(), aliases={"test"}, priority=5, block=True)
 
 
 @dmg_panel.handle()
 async def _(event: MessageEvent, msg: Message = CommandArg()):
-    from Nahidabot.Nahida_Calc.role_model import RoleModel
+    from Nahida_Calc.role.role_model import RoleModel
 
-    role = RoleModel(name="雷电将军")
+    role = RoleModel(name="行秋")
     await role.update_from_database(user_qq=event.get_user_id())
-    await role.get_buff()
-    await role.get_dmg()
+    # await role.get_buff()
+    # await role.get_dmg()
 
     pass

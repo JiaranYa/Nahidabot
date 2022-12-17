@@ -1,8 +1,7 @@
-from typing import Dict, List, Literal, Optional, Union
+import json
+from typing import Literal, Optional, Union
 
-import numpy as np
-from nonebot.log import logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, parse_raw_as
 
 # 以下用于数据获取存储
 
@@ -14,9 +13,9 @@ class EnkaInfo(BaseModel):
 
     uid: str
     """玩家uid"""
-    playerInfo: Optional[Dict] = None
+    playerInfo: dict = {}
     """玩家信息"""
-    avatarInfoList: Optional[List] = None
+    avatarInfoList: list = []
     """角色列表"""
 
 
@@ -48,7 +47,7 @@ class SkillMultiplier(BaseModel):
     """技能序号"""
     dsc: str = ""
     """技能描述"""
-    multiplier: List[float] = []
+    multiplier: list[float] = []
     """等级倍率表"""
 
 
@@ -67,15 +66,15 @@ class RoleInfo(BaseModel):
     """所属地区"""
     abbr: str = ""
     """缩写"""
-    scaling_table: Optional[List[SkillMultiplier]] = None
+    scaling_table: Optional[list[SkillMultiplier]] = None
     """技能倍率表"""
-    skill_order: List[int]
+    skill_order: list[int]
     """天赋表"""
     energy_cost: int
     """元素爆发能量"""
     proud_map: dict = {}
     """命座天赋加成"""
-    extra_info: Optional[Dict] = None
+    extra_info: Optional[dict] = None
     """额外信息"""
 
 
@@ -170,6 +169,25 @@ class DMGBonus(BaseModel):
 
     def __getitem__(self, key: str):
         return eval(f"self.{key.lower()}")
+
+    def set(self, key, value):
+        if key == "phy":
+            self.phy = value
+        elif key == "pyro":
+            self.pyro = value
+        elif key == "electro":
+            self.electro = value
+        elif key == "hydro":
+            self.hydro = value
+        elif key == "dendro":
+            self.dendro = value
+        elif key == "anemo":
+            self.anemo = value
+        elif key == "geo":
+            self.geo = value
+        elif key == "cryo":
+            self.cryo = value
+        return self
 
 
 class FightProp(BaseModel):
@@ -288,7 +306,7 @@ class Relic(BaseModel):
 
     name: str
     """名称"""
-    slot: str
+    type: str
     """部位"""
     set: str
     """所属套装"""
@@ -298,7 +316,7 @@ class Relic(BaseModel):
     """圣遗物图标"""
     main_stat: PropertySlot
     """主属性"""
-    sub_stat_list: List[PropertySlot]
+    sub_stat_list: list[PropertySlot]
     """副属性"""
     rank: int
     """稀有度"""
@@ -384,6 +402,18 @@ class RelicScore(BaseModel):
         if key == "circlet":
             return self.circlet
 
+    def set_score(self, key, value):
+        if key == "flower":
+            self.flower = value
+        if key == "plume":
+            self.plume = value
+        if key == "sands":
+            self.sands = value
+        if key == "goblet":
+            self.goblet = value
+        if key == "circlet":
+            self.circlet = value
+
 
 class Multiplier(BaseModel):
     """倍率"""
@@ -406,22 +436,14 @@ class Multiplier(BaseModel):
         )
 
 
-class PropBuff(BaseModel):
-    hp_percent: float = 0
-    hp_fix: float = 0
-    atk_percent: float = 0
-    atk_fix: float = 0
-    def_percent: float = 0
-    def_fix: float = 0
+class PoFValue(BaseModel):
+    percent: float = 0
+    fix: float = 0
 
-    def __add__(self, other: "PropBuff"):
-        return PropBuff(
-            hp_percent=self.hp_percent + other.hp_percent,
-            hp_fix=self.hp_fix + other.hp_fix,
-            atk_percent=self.atk_percent + other.atk_percent,
-            atk_fix=self.atk_fix + other.atk_fix,
-            def_percent=self.def_percent + other.def_percent,
-            def_fix=self.def_fix + other.def_fix,
+    def __add__(self, other: "PoFValue"):
+        return PoFValue(
+            percent=self.percent + other.percent,
+            fix=self.fix + other.fix,
         )
 
 
@@ -440,29 +462,12 @@ class FixValue(BaseModel):
         )
 
 
-class DMG(BaseModel):
-    """"""
-
-    index: int
-    dsc: str
-    exp_hit: int
-    crit_hit: int = 0
-
-
-class DmgSetting(BaseModel):
-    """"""
-
-    index: int
-    dsc: str = ""
-    weight: float
-
-
 class Buff(BaseModel):
     """增益器"""
 
     dsc: str = ""
     """增益描述"""
-    target: Union[List[str], str] = "ALL"
+    target: Union[list[str], str] = "ALL"
     """增益目标：
         NA-普通攻击\\
         CA-重击\\
@@ -474,7 +479,7 @@ class Buff(BaseModel):
         H-治疗\\
         S-护盾
     """
-    elem_type: Union[str, List[str]] = "all"
+    elem_type: Union[str, list[str]] = "all"
     """伤害元素类型：\\
         phy-物理\\
         pyro-火属性\\
@@ -489,20 +494,20 @@ class Buff(BaseModel):
     """
     triger_type: str = "all"
     """触发类型：\\
-        all-均可触发\\
+        all-均可触发或无关\\
         active-场上触发\\
         off field-后台触发
     """
-    reaction_type: Union[str, List[str]] = ""
+    reaction_type: Union[str, list[str]] = ""
     """元素反应类型：\\
         剧变："燃烧", "超导", "扩散", "感电", "碎冰", "超载", "原绽放", "烈绽放", "超绽放", "结晶"\\
         增幅："火蒸发", "冰融化", "水蒸发", "火融化", "蔓激化", "超激化"
     """
-    hp: float = 0
+    hp: PoFValue = PoFValue()
     """生命增益"""
-    atk: float = 0
+    atk: PoFValue = PoFValue()
     """攻击增益"""
-    defend: float = 0
+    defend: PoFValue = PoFValue()
     """防御增益"""
     mutiplier: Multiplier = Multiplier()
     """倍率增益"""
@@ -539,7 +544,7 @@ class BuffSetting(BaseModel):
 
     dsc: str = ""
     """描述"""
-    label: Union[int, list[int]] = 0
+    label: str = ""
     """设置"""
     state: str = ""
 
@@ -571,15 +576,29 @@ class BuffInfo(BaseModel):
     """增益器设置"""
 
 
-class DMGInfo(BaseModel):
+class DMG(BaseModel):
     """"""
 
+    index: int
+    """序号"""
     source: str = ""
-    """增益来源"""
-    dmg_info: DMG = DMG()
-    """增益器列表"""
-    setting: DmgSetting = DmgSetting()
-    """增益器设置列表"""
+    """数值来源"""
+    name: str = ""
+    """"""
+    type: str = "D"
+    """类型：
+        D：伤害
+        H：治疗
+        S：护盾
+    """
+    dsc: str = ""
+    """描述"""
+    exp_value: int = 0
+    """"""
+    crit_value: int = 0
+    """"""
+    weight: int = 0
+    """权重 0-10"""
 
 
 class Role(BaseModel):
@@ -589,7 +608,7 @@ class Role(BaseModel):
 
     name: str
     """角色名"""
-    scaling_table: Optional[List[SkillMultiplier]] = None
+    scaling_table: Optional[list[SkillMultiplier]] = None
     """技能倍率表"""
     talent: Optional[PropInfo] = None
     """角色属性信息"""
@@ -601,9 +620,31 @@ class Role(BaseModel):
     """角色圣遗物信息"""
     scores: Optional[RelicScore] = None
     """圣遗物评分"""
-    buff_list: List[BuffInfo] = []
+    party_member: list[str] = []
+    """队友"""
+    buff_list: list[BuffInfo] = []
     """增益表"""
-    dmg_setting: List[DmgSetting] = []
-    """伤害设置信息"""
-    damage: List[DMG] = []
+    # dmg_setting: list[DmgSetting] = []
+    # """伤害设置信息"""
+    dmg_list: list[DMG] = []
     """伤害信息"""
+
+
+class BuffList(BaseModel):
+    @classmethod
+    def encoder(cls, models: list["BuffInfo"]):
+        return json.dumps(models, default=cls.dict)
+
+    @classmethod
+    def decoder(cls, json_data):
+        return parse_raw_as(list[BuffInfo], json_data)
+
+
+class DMGList(BaseModel):
+    @classmethod
+    def encoder(cls, models: list["DMG"]):
+        return json.dumps(models, default=cls.dict)
+
+    @classmethod
+    def decoder(cls, json_data):
+        return parse_raw_as(list[DMG], json_data)

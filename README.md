@@ -24,4 +24,4 @@
 - [975 圆体 / 975 Maru](https://github.com/lxgw/975maru)
 - 图片CDN：[GitHub - jsdelivr/jsdelivr: A free, fast, and reliable Open Source CDN for npm, GitHub, Javascript, and ESM](https://github.com/jsdelivr/jsdelivr)
 - QQ协议及框架：[Nonebot2-跨平台 Python 异步机器人框架 ](https://github.com/nonebot/nonebot2)
-- 源码及功能参考：[小派蒙|LittlePaimon](https://github.com/CMHopeSunshine/LittlePaimon)
+- 部分源码及功能参考：[小派蒙|LittlePaimon](https://github.com/CMHopeSunshine/LittlePaimon)

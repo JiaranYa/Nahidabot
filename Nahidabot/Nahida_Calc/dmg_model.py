@@ -1,17 +1,14 @@
-from typing import Literal, Optional, Union
-
-import numpy as np
+from copy import deepcopy
+from typing import Literal
 
 from Nahidabot.utils.classmodel import (
+    DMG,
     BuffInfo,
     DMGBonus,
     FightProp,
     FixValue,
     Multiplier,
-    PropBuff,
-    PropInfo,
-    Relicset,
-    Weapon,
+    PoFValue,
 )
 from Nahidabot.utils.file import load_json
 
@@ -76,6 +73,12 @@ class DMGCalc:
         """攻击力"""
         self.defend = prop.defend
         """防御力"""
+        self.hp_base = prop.hp_base
+        """基础生命上限"""
+        self.atk_base = prop.atk_base
+        """基础攻击力"""
+        self.def_base = prop.def_base
+        """基础防御力"""
         self.multiplier = Multiplier()
         """倍率"""
         self.crit_rate = prop.crit_rate
@@ -114,6 +117,9 @@ class DMGCalc:
         self.rea_factor = 1
         """反应系数加成"""
 
+    def copy(self):
+        return deepcopy(self)
+
     def set(
         self,
         value_type: ValueType = "",
@@ -123,13 +129,13 @@ class DMGCalc:
         multiplier: Multiplier = Multiplier(),
     ):
         """
-        函数：复制/设定伤害属性
-        Args:
-            value_type  :数值类型
-            elem_type   :伤害元素类型
+        函数：复制/设定伤害属性\\
+        *Args:
+            value_type  : 数值类型
+            elem_type   : 伤害元素类型
+            member_type ： 是否脱手
+            reaction_type ： 反应类型
             multiplier   :倍率
-        Returns:
-            新伤害属性
         """
         self.value_type = value_type
         self.elem_type = elem_type
@@ -140,9 +146,9 @@ class DMGCalc:
 
     def buff(
         self,
-        extra_hp: float = 0,
-        extra_atk: float = 0,
-        extra_def: float = 0,
+        extra_hp: PoFValue = PoFValue(),
+        extra_atk: PoFValue = PoFValue(),
+        extra_def: PoFValue = PoFValue(),
         extra_mutiplier: Multiplier = Multiplier(),
         extra_crit_rate: float = 0,
         extra_crit_dmg: float = 0,
@@ -162,9 +168,9 @@ class DMGCalc:
         @params: 面板增益数值
         @returns: 新面板数值
         """
-        self.hp += extra_hp
-        self.atk += extra_atk
-        self.defend += extra_def
+        self.hp += extra_hp.fix + extra_hp.percent * self.hp_base
+        self.atk += extra_atk.fix + extra_atk.percent * self.atk_base
+        self.defend += extra_def.fix + extra_def.percent * self.def_base
         self.multiplier += extra_mutiplier
         self.crit_rate += extra_crit_rate
         self.crit_dmg += extra_crit_dmg
@@ -336,16 +342,15 @@ class DMGCalc:
         return self.base_value + self.fix_value.shield
 
     def __add__(self, other: list[BuffInfo]):
-        output = self.set()
+        output = self.copy()
         for buff_info in other:
-            buff = buff_info.buff
             if (buff := buff_info.buff) is None:
                 continue
 
-            if (
-                output.value_type not in buff.target
-                and output.reaction_type not in buff.reaction_type
-            ):
+            if output.reaction_type not in buff.reaction_type:
+                break
+
+            if all(e not in buff.target for e in ["ALL", output.value_type]):
                 break
 
             if output.member_type == "active" and "off" in buff.triger_type:
@@ -383,56 +388,17 @@ class DMGCalc:
         return output
 
 
-class RoleModel:
-    name: str
-    """角色名"""
-    scaling_table: Multiplier
-    """倍率表"""
-    talent: PropInfo
-    """"""
-    attribute: FightProp
-    """静态面板"""
-    weapon: Optional[Weapon] = None
-    """角色武器信息"""
-    artifacts: Optional[Relicset] = None
-    """角色圣遗物信息"""
-    propbuff: list[BuffInfo] = []
-    """面板型增益"""
-    transbuff: list[BuffInfo] = []
-    """转移型增益"""
-    dmgbuff: list[BuffInfo] = []
-    """伤害型增益"""
-
-    def __init__(self):
-        """"""
-
-    @property
-    def calculator(self):
-        """战斗实时面板"""
-        Xingqiu = DMGCalc(self.attribute, self.talent.level)
-        return Xingqiu + self.propbuff + self.transbuff + self.dmgbuff
-
-    async def setting(self) -> list[BuffInfo]:
-        """获取增益设置"""
-        return []
-
-    async def buff(self) -> list[BuffInfo]:
-        """获取增益"""
-        return []
-
-    def get_setting(self):
-        """获取增益设定"""
-
-    def get_buff(self):
-        """"""
-
-    def get_dmg(self):
-        """"""
-
-
 def reserve_setting(buff_list: list[BuffInfo]):
     """保留设置"""
-    output: dict[str, int] = {}
+    output: dict[str, str] = {}
     for buff in buff_list:
-        output.update({buff.name: buff.setting.label})
+        output |= {buff.name: buff.setting.label}
+    return output
+
+
+def reserve_weight(dmg_list: list[DMG]):
+    """保留权重"""
+    output: dict[str, int] = {}
+    for dmg in dmg_list:
+        output |= {dmg.name: dmg.weight}
     return output

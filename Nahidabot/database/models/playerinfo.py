@@ -2,8 +2,8 @@ from tortoise import fields
 from tortoise.models import Model
 
 from Nahidabot.utils.classmodel import (
-    BuffInfo,
-    DMGBonus,
+    BuffList,
+    DMGList,
     FightProp,
     PlayerInfo,
     PropertySlot,
@@ -84,9 +84,23 @@ class PropList(Model):
         description="圣遗物分数",
         null=True,
     )
-    buff_info = fields.JSONField(description="增益列表", default=[])
-    dmg_info = fields.JSONField(description="伤害数据", default=[])
-    dmg_setting = fields.JSONField(description="伤害设置", default=[])
+    party_member = fields.JSONField(
+        description="队友",
+        null=True,
+    )
+    buff_info = fields.JSONField(
+        encoder=BuffList.encoder,
+        decoder=BuffList.decoder,
+        description="增益列表",
+        null=True,
+    )
+    dmg_info = fields.JSONField(
+        encoder=DMGList.encoder,
+        decoder=DMGList.decoder,
+        description="伤害数据",
+        null=True,
+    )
+    # dmg_setting = fields.JSONField(description="伤害设置", default=[])
 
     class Meta:
         table = "role_property"
@@ -141,12 +155,12 @@ class PropList(Model):
                 Q_cost=cost,
                 skill_E_prod=3
                 if data.get("proudSkillExtraLevelMap", {}).get(
-                    proud_map.get(str(skill_list[1]))
+                    str(proud_map[f"{skill_list[1]}"])
                 )
                 else 0,
                 skill_Q_prod=3
                 if data.get("proudSkillExtraLevelMap", {}).get(
-                    proud_map.get(str(skill_list[2]))
+                    str(proud_map[f"{skill_list[2]}"])
                 )
                 else 0,
             )
@@ -198,7 +212,7 @@ class PropList(Model):
 
                     temp_relic = Relic(
                         name=artifact_map["Name"][icon],
-                        slot=item["flat"]["equipType"],
+                        type=item["flat"]["equipType"],
                         set=artifact_map["SetName"][item["flat"]["setNameTextMapHash"]],
                         level=item["reliquary"]["level"],
                         icon=icon + ".png",
@@ -206,15 +220,26 @@ class PropList(Model):
                         sub_stat_list=sub_stat_list,
                         rank=item["flat"]["rankLevel"],
                     )
-                    if temp_relic.slot == "EQUIP_BRACER":
+                    if temp_relic.type == "EQUIP_BRACER":
+                        temp_relic.type = "flower"
                         relic_list.flower = temp_relic
-                    elif temp_relic.slot == "EQUIP_NECKLACE":
+                    elif temp_relic.type == "EQUIP_NECKLACE":
+                        temp_relic.type = "plume"
                         relic_list.plume = temp_relic
-                    elif temp_relic.slot == "EQUIP_SHOES":
+                    elif temp_relic.type == "EQUIP_SHOES":
+                        temp_relic.type = "sands"
                         relic_list.sands = temp_relic
-                    elif temp_relic.slot == "EQUIP_RING":
+                    elif temp_relic.type == "EQUIP_RING":
+                        temp_relic.type = "goblet"
                         relic_list.goblet = temp_relic
-                    elif temp_relic.slot == "EQUIP_DRESS":
+                    elif temp_relic.type == "EQUIP_DRESS":
+                        temp_relic.type = "circlet"
                         relic_list.circlet = temp_relic
             role.artifacts = relic_list
+            if role.party_member is None:
+                role.party_member = []
+            if role.buff_info is None:
+                role.buff_info = []
+            if role.dmg_info is None:
+                role.dmg_info = []
             await role.save()

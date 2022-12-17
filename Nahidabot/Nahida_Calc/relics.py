@@ -1,11 +1,11 @@
-from nonebot.log import logger
+from typing import Optional
 
 from Nahidabot.utils.classmodel import (
     Buff,
     BuffInfo,
     BuffSetting,
     DMGBonus,
-    PropBuff,
+    PoFValue,
     PropInfo,
     Relicset,
 )
@@ -25,7 +25,7 @@ async def artifacts(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
         setting = buff_info.setting
 
         if buff_info.name == "战狂4":
-            if setting.label == 0:
+            if setting.label == "0":
                 setting.state = "×"
             else:
                 setting.state = "✓"
@@ -42,7 +42,7 @@ async def artifacts(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
             )
 
         if buff_info.name == "勇士4":
-            if setting.label == 0:
+            if setting.label == "0":
                 setting.state = "×"
             else:
                 setting.state = "✓"
@@ -52,7 +52,7 @@ async def artifacts(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
                 )
 
         if buff_info.name == "教官4":
-            if setting.label == 0:
+            if setting.label == "0":
                 setting.state = "×"
             else:
                 setting.state = "✓"
@@ -76,7 +76,7 @@ async def artifacts(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
             )
 
         if buff_info.name == "武人4":
-            if setting.label == 0:
+            if setting.label == "0":
                 setting.state = "×"
             else:
                 setting.state = "✓"
@@ -87,9 +87,9 @@ async def artifacts(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
                 )
 
         if buff_info.name == "冰风4":
-            if setting.label == 0:
+            if setting.label == "0":
                 setting.state = "×"
-            elif setting.label == 1:
+            elif setting.label in ["1", "冰附着"]:
                 setting.state = "冰附着"
                 buff_info.buff = Buff(
                     dsc="敌人冰附着，暴击+20%",
@@ -103,7 +103,7 @@ async def artifacts(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
                 )
 
         if buff_info.name == "平雷4":
-            if setting.label == 0:
+            if setting.label == "0":
                 setting.state = "×"
             else:
                 setting.state = "✓"
@@ -113,7 +113,7 @@ async def artifacts(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
                 )
 
         if buff_info.name == "渡火4":
-            if setting.label == 0:
+            if setting.label == "0":
                 setting.state = "×"
             else:
                 setting.state = "✓"
@@ -123,7 +123,7 @@ async def artifacts(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
                 )
 
         if buff_info.name == "少女4":
-            if setting.label == 0:
+            if setting.label == "0":
                 setting.state = "×"
             else:
                 setting.state = "✓"
@@ -144,87 +144,131 @@ async def artifacts(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
         if buff_info.name == "翠绿4-1":
             buff_info.buff = Buff(
                 dsc="扩散反应系数+60%",
-                elem_type=["pyro","electro","hydro","cryo"],
+                elem_type=["pyro", "electro", "hydro", "cryo"],
                 reaction_type="扩散",
                 reaction_coeff=0.6,
             )
 
         if buff_info.name == "翠绿4-2":
-            if 0 in setting.label:
-                
+            buff_info.buff = Buff(
+                elem_type=[],
+                dsc="触发扩散10s内，对应元素抗性-40%",
+                resist_reduction=0.4,
+            )
+            if (a in setting.label for a in ["火", "1"]):
+                setting.state += "火"
+                buff_info.buff.elem_type.append("pyro")  # type: ignore
+            if (a in setting.label for a in ["水", "2"]):
+                setting.state += "水"
+                buff_info.buff.elem_type.append("hydro")  # type: ignore
+            if (a in setting.label for a in ["雷", "3"]):
+                setting.state += "雷"
+                buff_info.buff.elem_type.append("electro")  # type: ignore
+            if (a in setting.label for a in ["冰", "4"]):
+                setting.state += "冰"
+                buff_info.buff.elem_type.append("cryo")  # type: ignore
+            if setting.state == "":
+                setting.state = "无"
 
-        if name == "流浪大地的乐团":
-            if num >= 4:
-                # 生成增益
-                if talent.weapon_type in [
-                    "弓",
-                    "法器",
-                ]:
-                    output.buff.append(
-                        Buff(
-                            name="角斗4",
-                            dsc="弓，法器角色，重击增伤+35%",
-                            target="CA",
-                            elem_dmg_bonus=DMGBonus(all=0.35),
-                        )
-                    )
-
-        # TODO:如雷的盛怒
-        if name == "如雷的盛怒":
-            pass
-
-        # TODO:炽烈的炎之魔女
-        if name == "炽烈的炎之魔女":
-            pass
-
-        if name == "昔日宗室之仪":
-            if num >= 2:
-                # 生成增益
-                output.buff.append(
-                    Buff(
-                        name="宗室2",
-                        target="Q",
-                        dsc="元素爆发增伤+20％",
-                        elem_dmg_bonus=DMGBonus(all=0.2),
-                    )
+        if buff_info.name == "流浪大地的乐团":
+            if talent.weapon_type in ["弓", "法器"]:
+                buff_info.buff = Buff(
+                    dsc="弓，法器角色，重击增伤+35%",
+                    target="CA",
+                    dmg_bonus=0.35,
                 )
 
-            if num >= 4:
-                # 生成设置
-                setting = BuffSetting(
-                    name="宗室4",
-                    dsc="元素爆发||⓪未施放（×）：无增益；①施放（✓）：全队攻击+20%",
-                    label=1,
-                )
-                for s in buff_list.setting:
-                    if s.name == "宗室4":
-                        setting = s
+        if buff_info.name == "如雷4-1":
+            buff_info.buff = Buff(
+                dsc="超载、感电、超导、超绽放反应系数+40%",
+                elem_type=["pyro", "electro", "cryo", "dendro"],
+                reaction_type=["超载", "感电", "超导", "超绽放"],
+                reaction_coeff=0.4,
+            )
 
-                # 生成增益
-                if setting.label == 0:
-                    setting.state = "×"
-                else:
-                    setting.state = "✓"
-                    output.buff.append(
-                        Buff(
-                            name="宗室4",
-                            dsc="施放元素爆发12秒内，全队攻击+20%",
-                            basic_prop=PropBuff(atk_percent=0.2),
-                        )
-                    )
-                output.setting.append(setting)
+        if buff_info.name == "如雷4-2":
+            buff_info.buff = Buff(
+                dsc="超激化反应系数+20%",
+                elem_type=["electro"],
+                reaction_type=["超激化"],
+                reaction_coeff=0.2,
+            )
+
+        if buff_info.name == "魔女4-1":
+            buff_info.buff = Buff(
+                dsc="超载、燃烧、烈绽放反应系数+40%",
+                elem_type=["pyro", "dendro"],
+                reaction_type=["超载", "燃烧", "烈绽放"],
+                reaction_coeff=0.4,
+            )
+
+        if buff_info.name == "魔女4-2":
+            buff_info.buff = Buff(
+                dsc="蒸发、融化反应系数+15%",
+                elem_type=["pyro", "hydro", "cryo"],
+                reaction_type=["火蒸发", "冰融化", "水蒸发", "火融化"],
+                reaction_coeff=0.15,
+            )
+
+        if buff_info.name == "魔女4-3":
+            if setting.label == "0":
+                setting.state = "×"
+            elif setting.label == "1":
+                setting.state = "1层"
+                buff_info.buff = Buff(
+                    elem_type="pyro",
+                    dsc="施放元素战技10秒内，火伤+7.5%",
+                    elem_dmg_bonus=DMGBonus(pyro=0.075),
+                )
+            elif setting.label == "2":
+                setting.state = "2层"
+                buff_info.buff = Buff(
+                    elem_type="pyro",
+                    dsc="施放元素战技10秒内，火伤+15%",
+                    elem_dmg_bonus=DMGBonus(pyro=0.15),
+                )
+            else:
+                setting.state = "3层"
+                buff_info.buff = Buff(
+                    elem_type="pyro",
+                    dsc="施放元素战技10秒内，火伤+22.5%",
+                    elem_dmg_bonus=DMGBonus(pyro=0.225),
+                )
+
+        if buff_info.name == "宗室2":
+            buff_info.buff = Buff(
+                target="Q",
+                dsc="元素爆发增伤+20％",
+                dmg_bonus=0.2,
+            )
+
+        if buff_info.name == "宗室4":
+            if setting.label == "0":
+                setting.state = "×"
+            else:
+                setting.state = "✓"
+                buff_info.buff = Buff(
+                    dsc=f"施放元素爆发12秒内，全队攻击+20% => {prop.atk_base * 0.2}",
+                    triger_type="active",
+                    atk=PoFValue(percent=0.2),
+                )
 
     return buff_list
 
 
-async def artifacts_setting(relics: Relicset, buff_list: list[BuffInfo]):
+async def artifacts_setting(
+    relics: Optional[Relicset],
+    buff_list: list[BuffInfo],
+    name: str = "",
+):
     """"""
+    if relics is None:
+        return []
     output: list[BuffInfo] = []
     labels = reserve_setting(buff_list)
 
-    for i, (name, num) in enumerate(relics.set_info.items()):
-        source = f"圣遗物#{i+1}"
-        source2 = f"圣遗物#{i+2}"
+    for name, num in relics.set_info.items():
+        source = f"{name}-圣遗物"
 
         if name == "战狂":
             if num >= 4:
@@ -234,7 +278,7 @@ async def artifacts_setting(relics: Relicset, buff_list: list[BuffInfo]):
                         name="战狂4",
                         setting=BuffSetting(
                             dsc="角色生命||⓪高于70%（×）：无增益；①低于70（✓）：暴击+24%",
-                            label=labels.get("战狂4", 1),
+                            label=labels.get("战狂4", "1"),
                         ),
                     )
                 )
@@ -256,7 +300,7 @@ async def artifacts_setting(relics: Relicset, buff_list: list[BuffInfo]):
                         name="勇士4",
                         setting=BuffSetting(
                             dsc="敌方生命||⓪低于50%（×）：无增益；①高于50（✓）：增伤+30%",
-                            label=labels.get("勇士4", 1),
+                            label=labels.get("勇士4", "1"),
                         ),
                     )
                 )
@@ -271,7 +315,7 @@ async def artifacts_setting(relics: Relicset, buff_list: list[BuffInfo]):
                         buff_type="propbuff",
                         setting=BuffSetting(
                             dsc="元素反应||⓪未触发（×）：无增益；①触发（✓）：全队精通+120",
-                            label=labels.get("教官4", 1),
+                            label=labels.get("教官4", "1"),
                         ),
                     )
                 )
@@ -297,11 +341,11 @@ async def artifacts_setting(relics: Relicset, buff_list: list[BuffInfo]):
             if num >= 4:
                 output.append(
                     BuffInfo(
-                        source=source2,
+                        source=source,
                         name="武人4",
                         setting=BuffSetting(
                             dsc="元素战技||⓪未施放（×）：无增益；①施放（✓）：普攻与重击增伤+25%",
-                            label=labels.get("武人4", 1),
+                            label=labels.get("武人4", "1"),
                         ),
                     )
                 )
@@ -314,7 +358,7 @@ async def artifacts_setting(relics: Relicset, buff_list: list[BuffInfo]):
                         name="冰风4",
                         setting=BuffSetting(
                             dsc="敌方状态||⓪其余（×）：无增益；①冰附着：暴击+20%；②冻结：暴击+40%",
-                            label=labels.get("冰风4", 2),
+                            label=labels.get("冰风4", "2"),
                         ),
                     )
                 )
@@ -327,7 +371,7 @@ async def artifacts_setting(relics: Relicset, buff_list: list[BuffInfo]):
                         name="平雷4",
                         setting=BuffSetting(
                             dsc="敌方状态||⓪其余（×）：无增益；①雷附着（✓）：增伤+35%",
-                            label=labels.get("平雷4", 1),
+                            label=labels.get("平雷4", "1"),
                         ),
                     )
                 )
@@ -340,7 +384,7 @@ async def artifacts_setting(relics: Relicset, buff_list: list[BuffInfo]):
                         name="渡火4",
                         setting=BuffSetting(
                             dsc="敌方状态||⓪其余（×）：无增益；①火附着（✓）：增伤+35%",
-                            label=labels.get("渡火4", 1),
+                            label=labels.get("渡火4", "1"),
                         ),
                     )
                 )
@@ -353,7 +397,7 @@ async def artifacts_setting(relics: Relicset, buff_list: list[BuffInfo]):
                         name="少女4",
                         setting=BuffSetting(
                             dsc="元素战技或元素爆发||⓪未施放（×）：无增益；①施放（✓）：全队受治疗+20%",
-                            label=labels.get("少女4", 1),
+                            label=labels.get("少女4", "1"),
                         ),
                     )
                 )
@@ -379,9 +423,85 @@ async def artifacts_setting(relics: Relicset, buff_list: list[BuffInfo]):
                     BuffInfo(
                         source=source,
                         name="翠绿4-2",
+                        range="all",
                         setting=BuffSetting(
-                            dsc="",
-                            label=labels.get("翠绿4-2", 1),
+                            dsc="触发扩散（可重复）||⓪无：无增益；"
+                            + "①火：火抗-40%；②水：水抗-40%；"
+                            + "③雷：雷抗-40%；④冰：冰抗-40%；",
+                            label=labels.get("翠绿4-2", "火"),
+                        ),
+                    )
+                )
+
+        if name == "流浪大地的乐团":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="乐团4",
+                    )
+                )
+
+        if name == "如雷的盛怒":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="如雷4-1",
+                    )
+                )
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="如雷4-2",
+                    )
+                )
+
+        if name == "炽烈的炎之魔女":
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="魔女4-1",
+                    )
+                )
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="魔女4-2",
+                    )
+                )
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="魔女4-3",
+                        buff_type="propbuff",
+                        setting=BuffSetting(
+                            dsc="施放元素战技叠层||⓪0层：无增益；"
+                            + "①1层：火伤+7.5%；②2层：火伤+15%；③3层：火伤+22.5%",
+                            label=labels.get("魔女4-3", "3"),
+                        ),
+                    )
+                )
+
+        if name == "昔日宗室之仪":
+            if num >= 2:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="宗室2",
+                    )
+                )
+            if num >= 4:
+                output.append(
+                    BuffInfo(
+                        source=source,
+                        name="宗室4",
+                        range="all",
+                        buff_type="propbuff",
+                        setting=BuffSetting(
+                            dsc="元素爆发||⓪未施放（×）：无增益；①施放（✓）：全队攻击+20%",
+                            label=labels.get("宗室4", "1"),
                         ),
                     )
                 )
