@@ -11,6 +11,13 @@ from ..weapon import weapon_buff, weapon_setting
 class RoleModel(Role):
     """角色计算模型"""
 
+    prebuff: list[BuffInfo] = []
+    """圣遗物面板增益"""
+
+    def get_recharge(self):
+        calc = DMGCalc(self.fight_prop, self.talent.level) + self.prebuff
+        return calc.recharge
+
     propbuff: list[BuffInfo] = []
     """面板型增益"""
     transbuff: list[BuffInfo] = []
@@ -42,8 +49,15 @@ class RoleModel(Role):
     def calculator(self):
         """战斗实时面板"""
         return (
-            DMGCalc(self.fight_prop, self.talent.level) + self.propbuff + self.transbuff
+            DMGCalc(self.fight_prop, self.talent.level)
+            + self.prebuff
+            + self.propbuff
+            + self.transbuff
         )
+
+    @property
+    def valid_prop(self) -> list[str]:
+        return []
 
     async def setting(self, buff_list: list[BuffInfo]) -> list[BuffInfo]:
         """获取增益设置"""

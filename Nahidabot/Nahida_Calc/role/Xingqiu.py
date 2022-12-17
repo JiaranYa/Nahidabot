@@ -1,10 +1,4 @@
-from Nahidabot.utils.classmodel import (
-    DMG,
-    Buff,
-    BuffInfo,
-    BuffSetting,
-    Multiplier,
-)
+from Nahidabot.utils.classmodel import DMG, Buff, BuffInfo, BuffSetting, Multiplier
 
 from ..dmg_model import reserve_setting, reserve_weight
 from .role_model import RoleModel
@@ -72,6 +66,10 @@ class Xingqiu(RoleModel):
         dmg_info.exp_value = int(calc.get_dmg("exp"))
         dmg_info.crit_value = int(calc.get_dmg("crit"))
 
+    @property
+    def valid_prop(self):
+        return ["atk", "atk_per", "hydro", "crit", "crit_hurt"]
+
     async def setting(self, buff_list: list[BuffInfo]):
         output: list[BuffInfo] = []
         labels = reserve_setting(buff_list)
@@ -114,6 +112,14 @@ class Xingqiu(RoleModel):
     async def weight(self, dmg_list: list[DMG]):
         output: list[DMG] = []
         weights = reserve_weight(dmg_list)
+
+        output.append(
+            DMG(
+                index=0,
+                name="充能效率阈值",
+                weight=weights.get("充能效率阈值", 180),
+            )
+        )
 
         output.append(
             DMG(

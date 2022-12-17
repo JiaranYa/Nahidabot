@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import Any, Literal, Optional, Tuple, Union
+from typing import Any, Literal, Optional, Union
 
 from PIL import Image, ImageDraw
 
@@ -61,10 +61,10 @@ class ShowImage(object):
     async def text(
         self,
         text: Union[str, int, float],
-        width: Union[float, Tuple[float, float]],
-        height: Union[float, Tuple[float, float]],
+        width: Union[float, tuple[float, float]],
+        height: Union[float, tuple[float, float]],
         font: Optional[Any] = None,
-        color: Union[str, Tuple[int, int, int]] = "white",
+        color: Union[str, tuple[int, int, int]] = "white",
         align: Literal["left", "center", "right"] = "left",
     ):
 

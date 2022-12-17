@@ -170,6 +170,25 @@ class DMGBonus(BaseModel):
     def __getitem__(self, key: str):
         return eval(f"self.{key.lower()}")
 
+    def set(self, key, value):
+        if key == "phy":
+            self.phy = value
+        elif key == "pyro":
+            self.pyro = value
+        elif key == "electro":
+            self.electro = value
+        elif key == "hydro":
+            self.hydro = value
+        elif key == "dendro":
+            self.dendro = value
+        elif key == "anemo":
+            self.anemo = value
+        elif key == "geo":
+            self.geo = value
+        elif key == "cryo":
+            self.cryo = value
+        return self
+
 
 class FightProp(BaseModel):
     """
@@ -287,7 +306,7 @@ class Relic(BaseModel):
 
     name: str
     """名称"""
-    slot: str
+    type: str
     """部位"""
     set: str
     """所属套装"""
@@ -382,6 +401,18 @@ class RelicScore(BaseModel):
             return self.goblet
         if key == "circlet":
             return self.circlet
+
+    def set_score(self, key, value):
+        if key == "flower":
+            self.flower = value
+        if key == "plume":
+            self.plume = value
+        if key == "sands":
+            self.sands = value
+        if key == "goblet":
+            self.goblet = value
+        if key == "circlet":
+            self.circlet = value
 
 
 class Multiplier(BaseModel):
@@ -568,24 +599,6 @@ class DMG(BaseModel):
     """"""
     weight: int = 0
     """权重 0-10"""
-
-    # class DmgSetting(BaseModel):
-    #     """"""
-
-    #     dsc: str = ""
-    #     """"""
-    #     weight: float
-    #     """"""
-
-    # class DMGInfo(BaseModel):
-    #     """"""
-
-    # source: str = ""
-    # """增益来源"""
-    # dmg_info: DMG = DMG()
-    # """增益器列表"""
-    # setting: DmgSetting = DmgSetting()
-    # """增益器设置列表"""
 
 
 class Role(BaseModel):

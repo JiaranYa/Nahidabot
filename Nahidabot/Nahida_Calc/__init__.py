@@ -5,8 +5,7 @@ from Nahidabot.database.models import Player, PropList, RoleBasicInfo
 from Nahidabot.utils.classmodel import RoleInfo
 
 from .role import RoleModel, get_role
-
-# from .role_model import *
+from .score import get_scores
 
 
 async def update_rolemodel(user_qq, aid):
@@ -40,4 +39,5 @@ async def update_rolemodel(user_qq, aid):
     role_info = await PropList.get(user_qq=user_qq, uid=uid, role_name=info.name)
     role_info.buff_info = await role.save_buff()
     role_info.dmg_info = await role.get_dmg()
+    role_info.scores = await get_scores(role)
     await role_info.save()

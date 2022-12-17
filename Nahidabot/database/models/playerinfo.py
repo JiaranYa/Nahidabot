@@ -1,5 +1,3 @@
-import json
-
 from tortoise import fields
 from tortoise.models import Model
 
@@ -214,7 +212,7 @@ class PropList(Model):
 
                     temp_relic = Relic(
                         name=artifact_map["Name"][icon],
-                        slot=item["flat"]["equipType"],
+                        type=item["flat"]["equipType"],
                         set=artifact_map["SetName"][item["flat"]["setNameTextMapHash"]],
                         level=item["reliquary"]["level"],
                         icon=icon + ".png",
@@ -222,15 +220,20 @@ class PropList(Model):
                         sub_stat_list=sub_stat_list,
                         rank=item["flat"]["rankLevel"],
                     )
-                    if temp_relic.slot == "EQUIP_BRACER":
+                    if temp_relic.type == "EQUIP_BRACER":
+                        temp_relic.type = "flower"
                         relic_list.flower = temp_relic
-                    elif temp_relic.slot == "EQUIP_NECKLACE":
+                    elif temp_relic.type == "EQUIP_NECKLACE":
+                        temp_relic.type = "plume"
                         relic_list.plume = temp_relic
-                    elif temp_relic.slot == "EQUIP_SHOES":
+                    elif temp_relic.type == "EQUIP_SHOES":
+                        temp_relic.type = "sands"
                         relic_list.sands = temp_relic
-                    elif temp_relic.slot == "EQUIP_RING":
+                    elif temp_relic.type == "EQUIP_RING":
+                        temp_relic.type = "goblet"
                         relic_list.goblet = temp_relic
-                    elif temp_relic.slot == "EQUIP_DRESS":
+                    elif temp_relic.type == "EQUIP_DRESS":
+                        temp_relic.type = "circlet"
                         relic_list.circlet = temp_relic
             role.artifacts = relic_list
             if role.party_member is None:

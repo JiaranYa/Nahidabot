@@ -1,7 +1,5 @@
 from typing import Optional
 
-from nonebot.log import logger
-
 from Nahidabot.utils.classmodel import (
     Buff,
     BuffInfo,
