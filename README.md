@@ -14,9 +14,20 @@
 
 ## TODO List
 
-伤害计算器
+ - [x] 角色设置卡片
+ - [x] 角色面板卡片
+ - [ ] 设置更改命令
+ - [ ] 二期测试角色：
+   - [ ] 甘雨
+   - [ ] 神子
+   - [ ] 钟离
+   - [ ] 班尼特
 
-自定义评分系统
+## 评分说明
+
+## 安装方法
+
+## 指令集
 
 ## 开源致谢
 
@@ -26,4 +37,4 @@
 - [975 圆体 / 975 Maru](https://github.com/lxgw/975maru)
 - 图片CDN：[GitHub - jsdelivr/jsdelivr: A free, fast, and reliable Open Source CDN for npm, GitHub, Javascript, and ESM](https://github.com/jsdelivr/jsdelivr)
 - QQ协议及框架：[Nonebot2-跨平台 Python 异步机器人框架 ](https://github.com/nonebot/nonebot2)
-- 部分源码及功能参考：[小派蒙|LittlePaimon](https://github.com/CMHopeSunshine/LittlePaimon)
+- 部分源码、资源及功能参考：[小派蒙|LittlePaimon](https://github.com/CMHopeSunshine/LittlePaimon)

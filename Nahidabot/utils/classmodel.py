@@ -551,7 +551,7 @@ class BuffSetting(BaseModel):
     增益设置
     """
 
-    dsc: str = ""
+    dsc: str = "此增益为常驻增益"
     """描述"""
     label: str = ""
     """设置"""

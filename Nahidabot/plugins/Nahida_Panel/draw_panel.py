@@ -1,12 +1,10 @@
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
 
 from nonebot.adapters.onebot.v11 import MessageSegment
-from PIL import Image
 
-from Nahidabot.database import PropList
-from Nahidabot.utils.classmodel import DMG, BuffInfo, Relic, Relicset, Role
+from Nahidabot.utils.classmodel import DMG, BuffInfo, Relic, Role
 from Nahidabot.utils.file import load_img, load_json
 from Nahidabot.utils.path import STATIC_PATH
 from Nahidabot.utils.rating import rarity_rating
@@ -26,6 +24,7 @@ prop_map = load_json(STATIC_PATH / "property.json")
 
 materials_file = Path("others")
 gacha_file = Path("avatarimg")
+icon_file = Path("icon")
 weapon_file = Path("weapon")
 artifacts_file = Path("artifacts")
 talent_file = Path("talent")
@@ -35,6 +34,7 @@ fm = FontManager()
 
 
 async def draw_role_info(role_info: Role, uid: str, time: datetime):
+    """角色面板卡片"""
     img = ShowImage(await load_img(materials_file / f"bg_{role_info.info.element}.png"))
     # 增益列表
     if buff_info := role_info.buff_list:
@@ -409,6 +409,8 @@ async def draw_dmg_pic(dmg_list: list[DMG]) -> ShowImage:
     )
 
     for i, dmg in enumerate(dmg_list[1:], 1):
+        if dmg.weight == 0:
+            continue
         await img.draw_line((0, 120 * i), (1002, 120 * i), (255, 255, 255, 75), 2)
         await img.draw_line((60, 120 * i), (60, 120 * (i + 1)), (255, 255, 255, 75), 2)
         await img.text(
@@ -551,5 +553,210 @@ async def draw_buff_pic(buff_list: list[BuffInfo]) -> ShowImage:
                 2,
             )
             i += 1
+
+    return img
+
+
+async def draw_setting_info(
+    role_info: Role,
+    uid: str,
+):
+    """角色设置卡片"""
+    img = ShowImage(await load_img(materials_file / "bg.png"))
+    icon_img = await load_img(
+        icon_file / f"UI_AvatarIcon_{role_info.info.abbr}.png", (150, 150)
+    )
+    await img.paste(icon_img, (300, 30))
+    # await img.paste(await load_img(materials_file / f"star{role_info.info.}.png"), (0, 0))
+    await img.text(role_info.name, 600, 40, fm.get("HKFY.ttf", 84), "black")
+    await img.text(f"uid:{uid}", 600, 140, fm.get("number.ttf", 24), "black")
+    orange_title = ShowImage(await load_img(materials_file / "orange_card.png"))
+    orange_line = ShowImage(await load_img(materials_file / "orange.png"))
+    orange_body = ShowImage(await load_img(materials_file / "orange_board.png"))
+
+    buff_img = await draw_setting_pic(role_info.buff_list)
+    dmg_img = await draw_weight_pic(role_info.dmg_list)
+    h1 = buff_img.height
+    h2 = dmg_img.height
+    if h1 + h2 + 400 > img.height:
+        await img.stretch((730, 1377), h1 + h2 + 400, "height")
+
+    # 增益列表
+    await img.paste(orange_title, (40, 200))
+    await img.paste(orange_line, (40, 200))
+    await img.text("增益设置", (50, 220), 204, fm.get("HKFY.ttf", 40), align="center")
+
+    await img.paste(buff_img, (42, 270))
+
+    body1 = deepcopy(orange_body)
+    await body1.stretch((5, body1.width - 5), orange_line.width - 10, "width")
+    await body1.stretch((5, body1.height - 5), buff_img.height - 5, "height")
+    await img.paste(body1, (40, 270))
+
+    # 伤害列表
+    await img.paste(orange_title, (40, 300 + h1))
+    await img.paste(orange_line, (40, 300 + h1))
+    await img.text("权重设置", (50, 220), 304 + h1, fm.get("HKFY.ttf", 40), align="center")
+
+    # await img.stretch((730, 1377), dmg_img.height + 667, "height")
+    await img.paste(dmg_img, (42, 370 + h1))
+
+    body2 = deepcopy(orange_body)
+    await body2.stretch((5, body2.width - 5), orange_line.width - 10, "width")
+    await body2.stretch((5, body2.height - 5), dmg_img.height - 5, "height")
+    await img.paste(body2, (40, 370 + h1))
+
+    return MessageSegment.image(img.save_to_io())
+
+
+async def draw_weight_pic(dmg_list: list[DMG]) -> ShowImage:
+    """
+    绘制权重设置图片
+    @params
+        dmg_list: 权重列表
+    @return: 权重设置图片
+    """
+    height = 120 * len(dmg_list)
+    img = ShowImage(size=(1002, height - 60), color=(0, 0, 0, 0), mode="RGBA")
+
+    await img.draw_line((90, 0), (90, 60), (0, 0, 0, 100), 2)
+    await img.draw_line((800, 0), (800, 60), (0, 0, 0, 100), 2)
+    await img.text(
+        "D0", (0, 90), (0, 60), fm.get("hywh.ttf", 30), color="black", align="center"
+    )
+    await img.text(
+        dmg_list[0].name,
+        (90, 800),
+        (0, 60),
+        fm.get("hywh.ttf", 30),
+        color="black",
+        align="center",
+    )
+    await img.text(
+        dmg_list[0].weight,
+        (800, 1000),
+        (0, 60),
+        fm.get("hywh.ttf", 30),
+        color="black",
+        align="center",
+    )
+
+    for i, dmg in enumerate(dmg_list[1:], 1):
+        await img.draw_line((0, 120 * i - 60), (1002, 120 * i - 60), (0, 0, 0, 100), 2)
+        await img.draw_line((90, 120 * i - 60), (90, 120 * i + 60), (0, 0, 0, 100), 2)
+        await img.text(
+            f"D{i}",
+            (15, 90),
+            120 * i - 16,
+            fm.get("hywh.ttf", 30),
+            color="black",
+            align="center",
+        )
+        await img.draw_line((90, 120 * i), (800, 120 * i), (0, 0, 0, 100), 2)
+        await img.draw_line((180, 120 * i - 60), (180, 120 * i), (0, 0, 0, 100), 2)
+        await img.draw_line((800, 120 * i - 60), (800, 120 * i + 60), (0, 0, 0, 100), 2)
+
+        await img.text(
+            dmg.source,
+            (90, 180),
+            (120 * i - 60, 120 * i),
+            fm.get("hywh.ttf", 30),
+            color="black",
+            align="center",
+        )
+        await img.text(
+            dmg.name,
+            (180, 800),
+            (120 * i - 60, 120 * i),
+            fm.get("hywh.ttf", 30),
+            color="black",
+            align="center",
+        )
+        await img.text(
+            dmg.weight,
+            (800, 1002),
+            (120 * i - 60, 120 * i + 60),
+            fm.get("hywh.ttf", 36),
+            color="black",
+            align="center",
+        )
+
+        await img.text(
+            dmg.dsc,
+            (90, 800),
+            (120 * i, 120 * i + 60),
+            fm.get("hywh.ttf", 30),
+            color="black",
+            align="center",
+        )
+
+    return img
+
+
+async def draw_setting_pic(buff_list: list[BuffInfo]) -> ShowImage:
+    """
+    绘制设置图片
+    @params
+        buff_list: 增益列表
+    @return: 设置图片
+    """
+    height = 180 * len(buff_list)
+    img = ShowImage(size=(1002, height), color=(0, 0, 0, 0), mode="RGBA")
+
+    i = 0
+    for buff in buff_list:
+        await img.draw_line((90, 60 + 180 * i), (1002, 60 + 180 * i), (0, 0, 0, 100), 2)
+        await img.draw_line((90, 180 * i), (90, 180 * (i + 1)), (0, 0, 0, 100), 2)
+        await img.text(
+            f"W{i + 1}",
+            (15, 90),
+            76 + 180 * i,
+            fm.get("hywh.ttf", 28),
+            color="black",
+        )
+        await img.draw_line((300, 180 * i), (300, 60 + 180 * i), (0, 0, 0, 100), 2)
+        await img.draw_line((850, 180 * i), (850, 60 + 180 * i), (0, 0, 0, 100), 2)
+        await img.text(
+            buff.source,
+            (90, 300),
+            (180 * i, 60 + 180 * i),
+            fm.get("hywh.ttf", 28),
+            color="black",
+            align="center",
+        )
+        await img.text(
+            buff.name,
+            (300, 850),
+            (180 * i, 60 + 180 * i),
+            fm.get("hywh.ttf", 30),
+            color="black",
+            align="center",
+        )
+
+        await img.text(
+            buff.setting.state,
+            (850, 1002),
+            (180 * i, 60 + 180 * i),
+            fm.get("Yozai-Bold.ttf", 30),
+            color="black",
+            align="center",
+        )
+
+        await img.text(
+            buff.setting.dsc,
+            (90, 1002),
+            (60 + 180 * i, 180 * (i + 1)),
+            fm.get("Yozai-Bold.ttf", 24),
+            color="black",
+            align="center",
+        )
+
+        await img.draw_line(
+            (0, 180 * (i + 1)),
+            (1002, 180 * (i + 1)),
+            (0, 0, 0, 100),
+            2,
+        )
+        i += 1
 
     return img
