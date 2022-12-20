@@ -1,11 +1,11 @@
 from Nahidabot.database.models import PropList, RoleBasicInfo
 from Nahidabot.utils.classmodel import DMG, BuffInfo, Role, RoleInfo
 
-from ..dmg_model import DMGCalc
-from ..relics import artifacts, artifacts_setting
+from .dmg_model import DMGCalc
+from .relics import artifacts, artifacts_setting
 
 # from .role import role_buff, role_dmg
-from ..weapon import weapon_buff, weapon_setting
+from .weapon import weapon_buff, weapon_setting
 
 
 class RoleModel(Role):
@@ -15,7 +15,8 @@ class RoleModel(Role):
     """圣遗物面板增益"""
 
     def get_recharge(self):
-        calc = DMGCalc(self.fight_prop, self.talent.level) + self.prebuff
+        """充能（用于圣遗物计算）"""
+        calc = DMGCalc(self.fight_prop, self.info.level) + self.prebuff
         return calc.recharge
 
     propbuff: list[BuffInfo] = []
@@ -37,7 +38,7 @@ class RoleModel(Role):
         (roleinfo,) = await PropList.filter(
             user_qq=str(user_qq), uid=uid, role_name=self.name
         ).all()
-        self.talent = roleinfo.talent  # type: ignore
+        self.info = roleinfo.info  # type: ignore
         self.fight_prop = roleinfo.property  # type: ignore
         self.weapon = roleinfo.weapon  # type: ignore
         self.artifacts = roleinfo.artifacts  # type: ignore
@@ -49,7 +50,7 @@ class RoleModel(Role):
     def calculator(self):
         """战斗实时面板"""
         return (
-            DMGCalc(self.fight_prop, self.talent.level)
+            DMGCalc(self.fight_prop, self.info.level)
             + self.prebuff
             + self.propbuff
             + self.transbuff
@@ -57,22 +58,23 @@ class RoleModel(Role):
 
     @property
     def valid_prop(self) -> list[str]:
+        """有效属性"""
         return []
 
     async def setting(self, buff_list: list[BuffInfo]) -> list[BuffInfo]:
-        """获取增益设置"""
+        """增益设置"""
         return []
 
     async def buff(self, buff_list: list[BuffInfo]) -> list[BuffInfo]:
-        """获取增益"""
+        """增益列表"""
         return []
 
     async def weight(self, dmg_list: list[DMG]) -> list[DMG]:
-        """获取伤害权重"""
+        """伤害权重"""
         return []
 
     async def dmg(self, dmg_list: list[DMG]) -> list[DMG]:
-        """获取伤害列表"""
+        """伤害列表"""
         return []
 
     async def get_setting(self):
@@ -80,8 +82,10 @@ class RoleModel(Role):
         buff_list = self.buff_list.copy()
         self.buff_list = []
         self.buff_list.extend(await self.setting(buff_list))
-        self.buff_list.extend(await weapon_setting(self.weapon, self.talent, buff_list))
-        self.buff_list.extend(await artifacts_setting(self.artifacts, buff_list))
+        self.buff_list.extend(await weapon_setting(self.weapon, self.info, buff_list))
+        self.buff_list.extend(
+            await artifacts_setting(self.artifacts, buff_list, self.name)
+        )
 
     async def get_buff(self, mode: str):
         """获取自身增益"""
@@ -93,9 +97,9 @@ class RoleModel(Role):
         # 自身增益
         await self.buff(input_buff)
         # 武器增益
-        await weapon_buff(input_buff, self.talent, self.calculator)
+        await weapon_buff(input_buff, self.info, self.calculator)
         # 圣遗物增益
-        await artifacts(input_buff, self.talent, self.calculator)
+        await artifacts(input_buff, self.info, self.calculator)
 
         if mode == "propbuff":
             self.propbuff.extend(input_buff)
@@ -106,7 +110,7 @@ class RoleModel(Role):
 
         output_buff: list[BuffInfo] = []
         for buff in input_buff:
-            if buff.range != "self":
+            if buff.buff_range != "self":
                 output_buff.append(buff)
         return output_buff
 
@@ -137,5 +141,6 @@ class RoleModel(Role):
             self.dmgbuff.extend(partner_buff)
 
     async def get_dmg(self):
+        """获取伤害列表"""
         self.dmg_list = await self.weight(self.dmg_list)
         return await self.dmg(self.dmg_list)

@@ -1,7 +1,7 @@
 from Nahidabot.utils.classmodel import DMG, Buff, BuffInfo, BuffSetting, Multiplier
 
 from ..dmg_model import reserve_setting, reserve_weight
-from .role_model import RoleModel
+from ..role_model import RoleModel
 
 
 class Xingqiu(RoleModel):
@@ -33,7 +33,7 @@ class Xingqiu(RoleModel):
             self.C4_to_E = 1
         else:
             setting.state = "✓"
-            buff_info.buff = Buff(dsc="古华剑·裁雨留虹持续期间，古华剑·画雨笼山倍率×0.5")
+            buff_info.buff = Buff(dsc="古华剑·裁雨留虹持续期间，古华剑·画雨笼山倍率×1.5")
             self.C4_to_E = 1.5
 
     def skill_E(self, dmg_info: DMG):
@@ -43,7 +43,7 @@ class Xingqiu(RoleModel):
             value_type="E",
             elem_type="hydro",
             multiplier=Multiplier(
-                atk=self.scaling_table[0].multiplier[self.talent.skill_E - 1]
+                atk=self.scaling_table[0].multiplier[self.info.skill_E - 1]
                 * self.C4_to_E
             ),
         )
@@ -59,7 +59,7 @@ class Xingqiu(RoleModel):
             elem_type="hydro",
             member_type="off",
             multiplier=Multiplier(
-                atk=self.scaling_table[1].multiplier[self.talent.skill_Q - 1]
+                atk=self.scaling_table[1].multiplier[self.info.skill_Q - 1]
             ),
         )
         calc += self.dmgbuff
@@ -74,25 +74,25 @@ class Xingqiu(RoleModel):
         output: list[BuffInfo] = []
         labels = reserve_setting(buff_list)
 
-        if self.talent.constellation >= 2:
+        if self.info.constellation >= 2:
             output.append(
                 BuffInfo(
                     source=f"{self.name}-C2",
                     name="天青现虹",
-                    range="all",
+                    buff_range="all",
                     setting=BuffSetting(
                         dsc="敌人受到剑雨攻击4s内||⓪（×）：无增益；①（✓）：水抗-15%",
                         label=labels.get("天青现虹", "1"),
                     ),
                 )
             )
-            if self.talent.constellation >= 4:
+            if self.info.constellation >= 4:
                 output.append(
                     BuffInfo(
                         source=f"{self.name}-C4",
                         name="孤舟斩蛟",
                         setting=BuffSetting(
-                            dsc="古华剑·裁雨留虹持续期间||⓪（×）：无增益；①（✓）：古华剑·画雨笼山倍率×0.5",
+                            dsc="古华剑·裁雨留虹持续期间||⓪（×）：无增益；①（✓）：古华剑·画雨笼山倍率×1.5",
                             label=labels.get("孤舟斩蛟", "1"),
                         ),
                     )
@@ -100,7 +100,6 @@ class Xingqiu(RoleModel):
         return output
 
     async def buff(self, buff_list: list[BuffInfo]):
-
         for buff in buff_list:
             if buff.name == "天青现虹":
                 self.C2(buff)

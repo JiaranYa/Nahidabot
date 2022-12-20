@@ -17,24 +17,23 @@ async def update_rolemodel(user_qq, aid):
         "uid", flat=True
     )
     role: Optional[RoleModel] = await get_role(name=info.abbr, user_qq=user_qq, uid=uid)
-    if role.name == "":
-        return
-    party_list: list[RoleModel] = [role]
-    for partner in await role.get_partner():
-        (info,) = await RoleBasicInfo.filter(name=partner).values_list(
-            "info", flat=True
-        )
-        party_list.append(await get_role(name=info.abbr, user_qq=user_qq, uid=uid))
+    if role.name:
+        party_list: list[RoleModel] = [role]
+        for partner in await role.get_partner():
+            (info,) = await RoleBasicInfo.filter(name=partner).values_list(
+                "info", flat=True
+            )
+            party_list.append(await get_role(name=info.abbr, user_qq=user_qq, uid=uid))
 
-    for partner in party_list:
-        await partner.get_setting()
+        for partner in party_list:
+            await partner.get_setting()
 
-    for mode in ["propbuff", "transbuff", "dmgbuff"]:
-        buff_list = []
-        for partner in party_list:
-            buff_list.extend(await partner.get_buff(mode=mode))
-        for partner in party_list:
-            await partner.load_buff(buff_list, mode=mode)
+        for mode in ["propbuff", "transbuff", "dmgbuff"]:
+            buff_list = []
+            for partner in party_list:
+                buff_list.extend(await partner.get_buff(mode=mode))
+            for partner in party_list:
+                await partner.load_buff(buff_list, mode=mode)
 
     role_info = await PropList.get(user_qq=user_qq, uid=uid, role_name=info.name)
     role_info.buff_info = await role.save_buff()

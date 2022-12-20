@@ -1,6 +1,6 @@
 from nonebot.log import logger
 
-from .role_model import RoleModel
+from ..role_model import RoleModel
 from .Xingqiu import Xingqiu
 
 

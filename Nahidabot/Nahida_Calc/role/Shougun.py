@@ -15,7 +15,7 @@ from Nahidabot.utils.classmodel import (
 )
 
 from ..dmg_model import reserve_setting
-from .role_model import RoleModel
+from ..role_model import RoleModel
 
 # async def Shougun(
 #     talent: PropInfo,

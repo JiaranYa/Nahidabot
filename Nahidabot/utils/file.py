@@ -49,16 +49,16 @@ async def load_img(
                 urljoin(AKASHA_STORE_URL, path.as_posix())
             ) as response:
                 content = await response.read()
-                if response.status != 200:
-                    logger.opt(colors=True).error("不存在该图片")
-                else:
+                if response.status == 200:
                     async with aiofiles.open(file, "wb") as f:
                         await f.write(content)
+    if file.is_file():
+        img = Image.open(file)
 
-    img = Image.open(file)
-
-    if size:
-        img = img.resize(size, Image.ANTIALIAS)
-    img.convert(mode)
-
-    return img
+        if size:
+            img = img.resize(size, Image.ANTIALIAS)
+        img.convert(mode)
+        return img
+    else:
+        logger.opt(colors=True).error(f"不存在图片{path.name}")
+        return await load_img(GRAPHIC_PATH / "others" / "fail.png", size, mode)

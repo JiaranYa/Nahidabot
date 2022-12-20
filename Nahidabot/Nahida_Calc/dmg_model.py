@@ -130,7 +130,7 @@ class DMGCalc:
     ):
         """
         函数：复制/设定伤害属性\\
-        *Args:
+        Params:
             value_type  : 数值类型
             elem_type   : 伤害元素类型
             member_type ： 是否脱手
@@ -188,7 +188,7 @@ class DMGCalc:
 
     @property
     def base_value(self):
-        """"""
+        """基础数值"""
         return (
             self.multiplier.hp * self.hp
             + self.multiplier.atk * self.atk
@@ -250,10 +250,10 @@ class DMGCalc:
         else:
             return self.rea_factor + 16 * self.elem_mastery / (self.elem_mastery + 2000)
 
-    def get_dmg(self, mode) -> float:
+    def get_dmg(self, mode="") -> float:
         """
         非反应伤害计算器
-        Args:
+        Params:
             mode:   "exp":期望伤害
                     "crit":暴击伤害
                     "":无暴击

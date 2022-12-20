@@ -32,10 +32,11 @@ class RoleBasicInfo(Model):
         role_table: dict[str, dict] = load_json(ROLE_TABLE_PATH)
         for key, value in role_table.items():
             roleinfo = RoleInfo(
-                name=value["Name"],
-                weapon_type=value["WeaponType"],
-                elem_type=value["ElemType"],
-                abbr=value["Abbr"],
+                name=value.get("Name", ""),
+                weapon_type=value.get("WeaponType", ""),
+                elem_type=value.get("ElemType", ""),
+                region=value.get("Region", ""),
+                abbr=value.get("Abbr", ""),
                 energy_cost=value.get("EnergyCost", 0),
                 skill_order=value.get("SkillOrder", []),
                 proud_map=value.get("ProudMap", {}),

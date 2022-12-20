@@ -140,5 +140,4 @@ go-cqhttp/*
 .env.dev
 .vscode/
 
-Nahidabot/database/static/graphic/
-Nahidabot/database/static/font/
+Nahidabot/resources

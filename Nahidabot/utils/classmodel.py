@@ -134,6 +134,16 @@ class PropInfo(BaseModel):
         """"""
         return self.skill_Q_base + self.skill_Q_prod
 
+    def get_skill(self, key):
+        if "A" in key:
+            return self.skill_A
+        if "E" in key:
+            return self.skill_E
+        if "Q" in key:
+            return self.skill_Q
+        else:
+            return 0
+
 
 class DMGBonus(BaseModel):
     """伤害加成"""
@@ -276,10 +286,10 @@ class PropertySlot(BaseModel):
     @property
     def prop(self) -> str:
         """用于计算和表示"""
-        if any(i in self.name for i in ["PERCENT", "ADD", "CHARGE", "CRITICAL"]):
-            return str(self.value) + "%"
+        if any(i == self.name for i in ["攻击力", "生命值", "防御力", "元素精通"]):
+            return "+" + str(int(self.value))
         else:
-            return str(int(self.value))
+            return "+" + str(self.value) + "%"
 
 
 class Weapon(BaseModel):
@@ -348,9 +358,7 @@ class Relicset(BaseModel):
                 dic[setname] = dic.setdefault(setname, 0) + 1
         return dic
 
-    def get_item(self, key):
-        if key == "total":
-            return self.set_info
+    def get_item(self, key="total"):
         if key == "flower":
             return self.flower
         if key == "plume":
@@ -361,6 +369,8 @@ class Relicset(BaseModel):
             return self.goblet
         if key == "circlet":
             return self.circlet
+        else:
+            return self.set_info
 
 
 # 以下用于计算
@@ -369,15 +379,15 @@ class RelicScore(BaseModel):
     圣遗物评分
     """
 
-    flower: Optional[float] = None
+    flower: float = -1
     """生之花"""
-    plume: Optional[float] = None
+    plume: float = -1
     """死之羽"""
-    sands: Optional[float] = None
+    sands: float = -1
     """时之沙"""
-    goblet: Optional[float] = None
+    goblet: float = -1
     """空之杯"""
-    circlet: Optional[float] = None
+    circlet: float = -1
     """理之冠"""
 
     @property
@@ -388,9 +398,7 @@ class RelicScore(BaseModel):
             score += s if s else 0
         return score
 
-    def get_score(self, key):
-        if key == "total":
-            return self.total_score
+    def get_score(self, key="total"):
         if key == "flower":
             return self.flower
         if key == "plume":
@@ -401,6 +409,8 @@ class RelicScore(BaseModel):
             return self.goblet
         if key == "circlet":
             return self.circlet
+        else:
+            return self.total_score
 
     def set_score(self, key, value):
         if key == "flower":
@@ -468,11 +478,10 @@ class Buff(BaseModel):
     dsc: str = ""
     """增益描述"""
     target: Union[list[str], str] = "ALL"
-    """增益目标：
+    """增益目标：\\
         NA-普通攻击\\
         CA-重击\\
         PA-下落攻击\\
-        A-普通攻击/重击/下落攻击\\
         E-元素战技\\
         Q-元素爆发\\
         ALL-所有类型\\
@@ -522,19 +531,19 @@ class Buff(BaseModel):
     elem_dmg_bonus: DMGBonus = DMGBonus()
     """元素伤害加成增益"""
     healing: float = 0
-    """"""
+    """治疗加成增益"""
     dmg_bonus: float = 0
     """增伤增益"""
     resist_reduction: float = 0
-    """"""
+    """减抗"""
     def_reduction: float = 0
-    """"""
+    """减防"""
     def_piercing: float = 0
-    """"""
+    """无视防御"""
     fix_value: FixValue = FixValue()
-    """"""
+    """固值加成"""
     reaction_coeff: float = 0
-    """"""
+    """反应系数增益"""
 
 
 class BuffSetting(BaseModel):
@@ -546,7 +555,7 @@ class BuffSetting(BaseModel):
     """描述"""
     label: str = ""
     """设置"""
-    state: str = ""
+    state: str = "-"
 
 
 class BuffInfo(BaseModel):
@@ -556,7 +565,7 @@ class BuffInfo(BaseModel):
     """增益来源"""
     name: str = ""
     """增益名"""
-    range: str = "self"
+    buff_range: str = "self"
     """加成范围：\\
         self-自身\\
         party-其余友方成员\\
@@ -584,7 +593,7 @@ class DMG(BaseModel):
     source: str = ""
     """数值来源"""
     name: str = ""
-    """"""
+    """技能名称"""
     type: str = "D"
     """类型：
         D：伤害
@@ -606,12 +615,12 @@ class Role(BaseModel):
     角色
     """
 
-    name: str
+    name: str = ""
     """角色名"""
     scaling_table: Optional[list[SkillMultiplier]] = None
     """技能倍率表"""
-    talent: Optional[PropInfo] = None
-    """角色属性信息"""
+    info: Optional[PropInfo] = None
+    """角色杂项信息"""
     fight_prop: Optional[FightProp] = None
     """角色面板信息"""
     weapon: Optional[Weapon] = None

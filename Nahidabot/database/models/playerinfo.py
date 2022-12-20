@@ -60,10 +60,10 @@ class PropList(Model):
     uid = fields.CharField(max_length=9)
     update_time = fields.DatetimeField(auto_now=True)
     role_name = fields.CharField(max_length=32)
-    talent = fields.JSONField(
+    info = fields.JSONField(
         encoder=PropInfo.json,
         decoder=PropInfo.parse_raw,
-        description="等级，命座和天赋",
+        description="杂项",
         null=True,
     )
     property = fields.JSONField(
@@ -110,6 +110,7 @@ class PropList(Model):
     async def insert_or_update_role(cls, uid: str, data_list: list[dict], user_qq: str):
         weapon_map = load_json(STATIC_PATH / "weapon.json")
         artifact_map = load_json(STATIC_PATH / "artifact.json")
+        property_name_map = load_json(STATIC_PATH / "property.json")
 
         for data in data_list:
             role_info: RoleInfo
@@ -139,12 +140,13 @@ class PropList(Model):
                         proud_map = playertype["ProudMap"]
                         break
 
-            role.talent = PropInfo(
+            role.info = PropInfo(
                 level=int(data["propMap"]["4001"]["val"]),
                 ascension=int(data["propMap"]["1002"]["val"]),
                 element=elem_type,
                 fetter=data.get("fetterInfo", {}).get("expLevel", 0),
                 weapon_type=role_info.weapon_type,
+                region=role_info.region,
                 abbr=abbr,
                 constellation=len(data["talentIdList"])
                 if "talentIdList" in data
@@ -201,20 +203,25 @@ class PropList(Model):
                 else:
                     icon = item["flat"]["icon"]
                     main_stat = PropertySlot(
-                        name=item["flat"]["reliquaryMainstat"]["mainPropId"],
+                        name=property_name_map[
+                            item["flat"]["reliquaryMainstat"]["mainPropId"]
+                        ],
                         value=item["flat"]["reliquaryMainstat"]["statValue"],
                     )
                     sub_stat_list = []
                     for i in item["flat"]["reliquarySubstats"]:
                         sub_stat_list.append(
-                            PropertySlot(name=i["appendPropId"], value=i["statValue"])
+                            PropertySlot(
+                                name=property_name_map[i["appendPropId"]],
+                                value=i["statValue"],
+                            )
                         )
 
                     temp_relic = Relic(
                         name=artifact_map["Name"][icon],
                         type=item["flat"]["equipType"],
                         set=artifact_map["SetName"][item["flat"]["setNameTextMapHash"]],
-                        level=item["reliquary"]["level"],
+                        level=item["reliquary"]["level"] - 1,
                         icon=icon + ".png",
                         main_stat=main_stat,
                         sub_stat_list=sub_stat_list,
