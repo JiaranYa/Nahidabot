@@ -178,7 +178,7 @@ async def get_score(role: RoleModel, type: str, dmg_true: list[DMG]):
         for i, info in enumerate(dmg_list):
             if i == 0:
                 continue
-            score += info.weight * (info.exp_value / dmg_base[i].exp_value)
+            score += max(info.weight, 0) * (info.exp_value / dmg_base[i].exp_value)
         score *= compens_curve(role.get_recharge())
         return score
 

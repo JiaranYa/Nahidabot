@@ -607,7 +607,7 @@ class DMG(BaseModel):
     crit_value: int = 0
     """"""
     weight: int = 0
-    """权重 0-10"""
+    """权重 -1-10"""
 
 
 class Role(BaseModel):

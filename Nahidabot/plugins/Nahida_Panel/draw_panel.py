@@ -622,7 +622,7 @@ async def draw_weight_pic(dmg_list: list[DMG]) -> ShowImage:
     await img.draw_line((90, 0), (90, 60), (0, 0, 0, 100), 2)
     await img.draw_line((800, 0), (800, 60), (0, 0, 0, 100), 2)
     await img.text(
-        "D0", (0, 90), (0, 60), fm.get("hywh.ttf", 30), color="black", align="center"
+        "W0", (0, 90), (0, 60), fm.get("hywh.ttf", 30), color="black", align="center"
     )
     await img.text(
         dmg_list[0].name,
@@ -645,8 +645,8 @@ async def draw_weight_pic(dmg_list: list[DMG]) -> ShowImage:
         await img.draw_line((0, 120 * i - 60), (1002, 120 * i - 60), (0, 0, 0, 100), 2)
         await img.draw_line((90, 120 * i - 60), (90, 120 * i + 60), (0, 0, 0, 100), 2)
         await img.text(
-            f"D{i}",
-            (15, 90),
+            f"W{i}",
+            23,
             120 * i - 16,
             fm.get("hywh.ttf", 30),
             color="black",
@@ -708,8 +708,8 @@ async def draw_setting_pic(buff_list: list[BuffInfo]) -> ShowImage:
         await img.draw_line((90, 60 + 180 * i), (1002, 60 + 180 * i), (0, 0, 0, 100), 2)
         await img.draw_line((90, 180 * i), (90, 180 * (i + 1)), (0, 0, 0, 100), 2)
         await img.text(
-            f"W{i + 1}",
-            (15, 90),
+            f"S{i + 1}",
+            25,
             76 + 180 * i,
             fm.get("hywh.ttf", 28),
             color="black",
