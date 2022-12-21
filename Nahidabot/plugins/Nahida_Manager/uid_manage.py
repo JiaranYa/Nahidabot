@@ -44,9 +44,9 @@ uid_update = on_command("更新面板", rule=to_me(), priority=3, block=True)
 @uid_update.handle()
 async def _(event: MessageEvent):
     try:
-        ((uid, update_time),) = await Player.filter(
-            user_qq=event.user_id, is_main_uid=True
-        ).values_list("uid", "update_time")
+        ((uid, update_time),) = await Player.filter(user_qq=event.user_id).values_list(
+            "uid", "update_time"
+        )
     except ValueError:
         await uid_update.finish("请先绑定uid")
 

@@ -4,7 +4,6 @@ import re
 from nonebot import on_command
 from nonebot.adapters.onebot.v11 import Message, MessageEvent
 from nonebot.params import Arg, ArgPlainText, CommandArg
-from nonebot.rule import to_me
 from nonebot.typing import T_State
 
 from Nahidabot.database import Player, PropList
@@ -13,7 +12,7 @@ from Nahidabot.utils.classmodel import Role
 from .draw_panel import draw_role_info, draw_setting_info
 
 # ---------------------------------------------------------------
-info_panel = on_command("nhd", rule=to_me(), aliases={"角色面板"}, priority=5, block=True)
+info_panel = on_command("nhd", aliases={"角色面板"}, priority=5, block=True)
 
 
 @info_panel.handle()
@@ -43,7 +42,7 @@ async def _(event: MessageEvent, msg: Message = CommandArg()):
 
 
 # ---------------------------------------------------------------
-setting_panel = on_command("set", rule=to_me(), aliases={"设置"}, priority=5, block=True)
+setting_panel = on_command("set", aliases={"设置"}, priority=5, block=True)
 
 
 @setting_panel.handle()
@@ -81,6 +80,8 @@ async def _(
     uid=Arg("uid"),
     role_name=Arg("name"),
 ):
+    if "取消" == settings:
+        await info_panel.finish("好吧，有需要再找纳西妲")
     setting_list = settings.strip().split(" ")
     for setting in setting_list:
         key, value = setting.split("-")
@@ -102,3 +103,4 @@ async def _(
     role_model.dmg_info = role.dmg_list
     role_model.buff_info = role.buff_list
     await role_model.save()
+    await info_panel.finish(f"{role_name}已更新")

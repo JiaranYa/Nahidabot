@@ -38,6 +38,7 @@ class ShowImage(object):
     def size(self):
         return self.image.size
 
+    @run_sync
     def save_to_io(self, **kwargs):
         bio = BytesIO()
         self.image.save(bio, "png", **kwargs)

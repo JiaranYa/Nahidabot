@@ -7,7 +7,7 @@ from nonebot.adapters.onebot.v11 import MessageSegment
 from Nahidabot.utils.classmodel import DMG, BuffInfo, Relic, Role
 from Nahidabot.utils.file import load_img, load_json
 from Nahidabot.utils.path import STATIC_PATH
-from Nahidabot.utils.rating import rarity_rating
+from Nahidabot.utils.tools import rarity_rating
 
 from .panel_model import FontManager, ShowImage
 
@@ -316,7 +316,11 @@ async def draw_role_info(role_info: Role, uid: str, time: datetime):
         # total_score += value
         rank, color = rarity_rating(score)
         await img.text(
-            f"{rank}-{score}", 22 + w, 66 + h, fm.get("number.ttf", 28), color=color
+            f"{rank}-{max(score,0)}",
+            22 + w,
+            66 + h,
+            fm.get("number.ttf", 28),
+            color=color,
         )
         await img.paste(level_mask.resize((98, 30)), (21 + w, 97 + h))
         await img.text(
@@ -371,7 +375,7 @@ async def draw_role_info(role_info: Role, uid: str, time: datetime):
         "center",
     )
 
-    return MessageSegment.image(img.save_to_io())
+    return MessageSegment.image(await img.save_to_io())
 
 
 async def draw_dmg_pic(dmg_list: list[DMG]) -> ShowImage:
@@ -606,7 +610,7 @@ async def draw_setting_info(
     await body2.stretch((5, body2.height - 5), dmg_img.height - 5, "height")
     await img.paste(body2, (40, 370 + h1))
 
-    return MessageSegment.image(img.save_to_io())
+    return MessageSegment.image(await img.save_to_io())
 
 
 async def draw_weight_pic(dmg_list: list[DMG]) -> ShowImage:

@@ -1,7 +1,10 @@
-from typing import Optional
+from nonebot.log import logger
+import toml
+from .path import VERSION_PATH
 
 
 def rarity_rating(score: float, flag: str = "single") -> tuple[str, str]:
+    """评分"""
     if flag == "total":
         score /= 5
 
@@ -25,22 +28,8 @@ def rarity_rating(score: float, flag: str = "single") -> tuple[str, str]:
         return "UN", "#afafaf"
 
 
-def rarity_color(level: str) -> str:
-    if level == "PER":
-        return ""
-    elif level == "ACE":
-        return ""
-    elif level == "UR":
-        return ""
-    elif level == "SSR":
-        return ""
-    elif level == "SR":
-        return ""
-    elif level == "R":
-        return ""
-    elif level == "N":
-        return ""
-    elif level == "G":
-        return ""
-    else:
-        return ""
+async def check_version():
+    """版本检查"""
+    logger.opt(colors=True).info("纳西妲开始检查虚空")
+    version = toml.load(VERSION_PATH)["VERSION"]
+    logger.opt(colors=True).info(f"本机版本:{version}")

@@ -395,7 +395,7 @@ class RelicScore(BaseModel):
         """圣遗物总分"""
         score = 0
         for s in [self.flower, self.plume, self.sands, self.goblet, self.circlet]:
-            score += s if s else 0
+            score += s if s and s != -1 else 0
         return score
 
     def get_score(self, key="total"):

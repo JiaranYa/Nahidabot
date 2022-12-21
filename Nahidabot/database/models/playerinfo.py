@@ -31,7 +31,6 @@ class Player(Model):
         null=True,
     )
     update_time = fields.DatetimeField(auto_now=True, description="最近更新时间")
-    is_main_uid = fields.BooleanField(description="是否是主要账号", null=True)
 
     class Meta:
         table = "player_info"
@@ -39,8 +38,7 @@ class Player(Model):
 
     @classmethod
     async def insert_or_update(cls, uid: str, data: dict, user_qq: int):
-        is_old_user = await cls.exists(user_qq=str(user_qq))
-        player, is_new_uid = await cls.get_or_create(user_qq=str(user_qq), uid=uid)
+        player, _ = await cls.get_or_create(user_qq=str(user_qq), uid=uid)
         player.player_info = PlayerInfo(
             uid=uid,
             nickname=data["nickname"],
@@ -49,8 +47,7 @@ class Player(Model):
             namecard_id=data["nameCardId"],
             signature=data["signature"],
         )
-        if is_new_uid:
-            player.is_main_uid = False if is_old_user else True
+
         await player.save()
 
 

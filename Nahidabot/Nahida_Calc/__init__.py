@@ -13,9 +13,7 @@ async def update_rolemodel(user_qq, aid):
     info: RoleInfo
     (info,) = await RoleBasicInfo.filter(aid=aid).values_list("info", flat=True)
 
-    (uid,) = await Player.filter(user_qq=user_qq, is_main_uid=True).values_list(
-        "uid", flat=True
-    )
+    (uid,) = await Player.filter(user_qq=user_qq).values_list("uid", flat=True)
     role: Optional[RoleModel] = await get_role(name=info.abbr, user_qq=user_qq, uid=uid)
     if role.name:
         party_list: list[RoleModel] = [role]

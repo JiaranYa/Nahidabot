@@ -1,6 +1,5 @@
 from copy import deepcopy
 from typing import Literal
-
 from Nahidabot.utils.classmodel import (
     DMG,
     BuffInfo,

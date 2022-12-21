@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 BASE_PATH = Path().cwd() / "Nahidabot"
 DATABASE_PATH = BASE_PATH / "database"
 

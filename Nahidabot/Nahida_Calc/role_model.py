@@ -6,6 +6,7 @@ from .relics import artifacts, artifacts_setting
 
 # from .role import role_buff, role_dmg
 from .weapon import weapon_buff, weapon_setting
+from .dmg_model import reserve_setting, reserve_weight
 
 
 class RoleModel(Role):
@@ -61,21 +62,28 @@ class RoleModel(Role):
         """有效属性"""
         return []
 
+
     async def setting(self, buff_list: list[BuffInfo]) -> list[BuffInfo]:
         """增益设置"""
-        return []
+        output: list[BuffInfo] = []
+        labels = reserve_setting(buff_list)
+
+        return output
 
     async def buff(self, buff_list: list[BuffInfo]) -> list[BuffInfo]:
         """增益列表"""
-        return []
+        return buff_list
 
     async def weight(self, dmg_list: list[DMG]) -> list[DMG]:
         """伤害权重"""
-        return []
+        output: list[DMG] = []
+        weights = reserve_weight(dmg_list)
+
+        return output
 
     async def dmg(self, dmg_list: list[DMG]) -> list[DMG]:
         """伤害列表"""
-        return []
+        return dmg_list
 
     async def get_setting(self):
         """获取自身增益设定"""
