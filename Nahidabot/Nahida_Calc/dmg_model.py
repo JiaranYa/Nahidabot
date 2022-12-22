@@ -1,5 +1,6 @@
 from copy import deepcopy
 from typing import Literal
+
 from Nahidabot.utils.classmodel import (
     DMG,
     BuffInfo,
@@ -55,8 +56,8 @@ class DMGCalc:
         self.elem_type: ElemType = ""
         """元素类型"""
         self.member_type: MemberType = "active"
-        """出伤类型：\\
-            active-前台结算\\
+        """出伤类型：
+            active-前台结算
             off-后台结算
         """
         self.reaction_type: ReaType = ""
@@ -126,21 +127,24 @@ class DMGCalc:
         member_type: MemberType = "active",
         reaction_type: ReaType = "",
         multiplier: Multiplier = Multiplier(),
+        fix_value: FixValue = FixValue(),
     ):
         """
         函数：复制/设定伤害属性\\
         Params:
-            value_type  : 数值类型
-            elem_type   : 伤害元素类型
-            member_type ： 是否脱手
-            reaction_type ： 反应类型
+            value_type  :数值类型
+            elem_type   :伤害元素类型
+            member_type :是否脱手
+            reaction_type :反应类型
             multiplier   :倍率
+            fix_value   :基础值
         """
         self.value_type = value_type
         self.elem_type = elem_type
         self.member_type = member_type
         self.reaction_type = reaction_type
         self.multiplier = multiplier
+        self.fix_value = fix_value
         return self
 
     def buff(
@@ -155,6 +159,7 @@ class DMGCalc:
         extra_recharge: float = 0,
         extra_elem_dmg_bonus: DMGBonus = DMGBonus(),
         extra_healing: float = 0,
+        extra_shield: float = 0,
         extra_dmg_bonus: float = 0,
         resist_reduction: float = 0,
         def_reduction: float = 0,
@@ -178,6 +183,7 @@ class DMGCalc:
         self.elem_dmg_bonus += extra_elem_dmg_bonus
         self.dmg_bonus += extra_dmg_bonus
         self.healing += extra_healing
+        self.shield_strength += extra_shield
         self.elem_resistance -= resist_reduction
         self.def_resistance -= def_reduction
         self.def_piercing += def_piercing
@@ -334,7 +340,7 @@ class DMGCalc:
 
     def get_healing(self):
         """治疗量"""
-        return (self.base_value + self.fix_value.heal) * self.healing
+        return (self.base_value + self.fix_value.heal) * (1 + self.healing)
 
     def get_shield(self):
         """盾量"""
@@ -346,7 +352,7 @@ class DMGCalc:
             if (buff := buff_info.buff) is None:
                 continue
 
-            if output.reaction_type not in buff.reaction_type:
+            if all(e not in buff.reaction_type for e in ["", output.reaction_type]):
                 break
 
             if all(e not in buff.target for e in ["ALL", output.value_type]):
@@ -378,6 +384,7 @@ class DMGCalc:
                 extra_elem_dmg_bonus=buff.elem_dmg_bonus,
                 extra_dmg_bonus=buff.dmg_bonus,
                 extra_healing=buff.healing,
+                extra_shield=buff.shield_strength,
                 resist_reduction=buff.resist_reduction,
                 def_reduction=buff.def_reduction,
                 def_piercing=buff.def_piercing,

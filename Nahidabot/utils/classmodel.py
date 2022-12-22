@@ -36,6 +36,8 @@ class PlayerInfo(BaseModel):
     """卡片id"""
     signature: Optional[str]
     """签名"""
+    aid_list: list[int] = []
+    """拥有的角色"""
 
 
 class SkillMultiplier(BaseModel):
@@ -532,6 +534,8 @@ class Buff(BaseModel):
     """元素伤害加成增益"""
     healing: float = 0
     """治疗加成增益"""
+    shield_strength: float = 0
+    """护盾强效"""
     dmg_bonus: float = 0
     """增伤增益"""
     resist_reduction: float = 0

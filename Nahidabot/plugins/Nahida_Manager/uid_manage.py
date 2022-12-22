@@ -9,14 +9,13 @@ from nonebot.adapters import Message
 from nonebot.adapters.onebot.v11 import MessageEvent
 from nonebot.log import logger
 from nonebot.params import CommandArg
-from nonebot.rule import to_me
 
 from Nahidabot.database import Player, PropList
 from Nahidabot.Nahida_Calc import update_rolemodel
 from Nahidabot.utils.classmodel import EnkaInfo
 
 # *-----------------------------------------------*
-uid_bind = on_command("绑定uid", rule=to_me(), aliases={"绑定"}, priority=3, block=True)
+uid_bind = on_command("绑定uid", aliases={"绑定"}, priority=3, block=True)
 
 
 @uid_bind.handle()
@@ -38,7 +37,7 @@ async def _(event: MessageEvent, msg: Message = CommandArg()):
 
 
 # *-----------------------------------------------*
-uid_update = on_command("更新面板", rule=to_me(), priority=3, block=True)
+uid_update = on_command("更新面板", priority=3, block=True)
 
 
 @uid_update.handle()
@@ -52,13 +51,13 @@ async def _(event: MessageEvent):
 
     if (
         datetime.utcnow().replace(tzinfo=timezone.utc) - update_time
-    ).total_seconds() == 600:  # TODO:修改小于
+    ).total_seconds() <= 600:
         await uid_update.finish("请等待10分钟再更新")
     else:
         data = await update_from_enka(uid=uid)
         await update_display_box(uid=uid, data=data, user_qq=event.user_id)
         for role in data.avatarInfoList:
-            await update_rolemodel(user_qq=event.user_id, aid=role["avatarId"])
+            await update_rolemodel(user_qq=event.user_id, uid=uid, aid=role["avatarId"])
         await uid_update.finish("已更新完毕")
 
 
@@ -69,6 +68,23 @@ async def update_display_box(uid, data: EnkaInfo, user_qq):
     await Player.insert_or_update(uid=uid, data=data.playerInfo, user_qq=user_qq)
 
     logger.opt(colors=True).success(f"已更新{uid}的信息")
+
+
+# *-----------------------------------------------*
+uid_refresh = on_command("刷新面板", priority=3, block=True)
+
+
+@uid_refresh.handle()
+async def _(event: MessageEvent):
+    try:
+        ((uid, player_info),) = await Player.filter(user_qq=event.user_id).values_list(
+            "uid", "player_info"
+        )
+    except ValueError:
+        await uid_update.finish("请先绑定uid")
+
+    for aid in player_info.aid_list:
+        await update_rolemodel(user_qq=event.user_id, uid=uid, aid=aid)
 
 
 # *-----------------------------------------------*

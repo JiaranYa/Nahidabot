@@ -39,6 +39,7 @@ class Player(Model):
     @classmethod
     async def insert_or_update(cls, uid: str, data: dict, user_qq: int):
         player, _ = await cls.get_or_create(user_qq=str(user_qq), uid=uid)
+        aid_list: list[int] = player.player_info.aid_list
         player.player_info = PlayerInfo(
             uid=uid,
             nickname=data["nickname"],
@@ -47,6 +48,10 @@ class Player(Model):
             namecard_id=data["nameCardId"],
             signature=data["signature"],
         )
+        for aid in data["showAvatarInfoList"]:
+            if aid["avatarId"] not in aid_list:
+                aid_list.append(aid["avatarId"])
+        player.player_info.aid_list = aid_list
 
         await player.save()
 

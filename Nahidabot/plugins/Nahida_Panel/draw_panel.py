@@ -411,14 +411,14 @@ async def draw_dmg_pic(dmg_list: list[DMG]) -> ShowImage:
         color="white",
         align="center",
     )
-
-    for i, dmg in enumerate(dmg_list[1:], 1):
+    i = 1
+    for j, dmg in enumerate(dmg_list[1:], 1):
         if dmg.weight == 0:
             continue
         await img.draw_line((0, 120 * i), (1002, 120 * i), (255, 255, 255, 75), 2)
         await img.draw_line((60, 120 * i), (60, 120 * (i + 1)), (255, 255, 255, 75), 2)
         await img.text(
-            i,
+            j,
             (0, 60),
             (120 * i, 120 * (i + 1)),
             fm.get("hywh.ttf", 30),
@@ -476,7 +476,8 @@ async def draw_dmg_pic(dmg_list: list[DMG]) -> ShowImage:
             color="white",
             align="center",
         )
-
+        i += 1
+    await img.crop((0, 0, 1002, 120 * i))
     return img
 
 
@@ -493,7 +494,7 @@ async def draw_buff_pic(buff_list: list[BuffInfo]) -> ShowImage:
     )
 
     i = 0
-    for buff in buff_list:
+    for j, buff in enumerate(buff_list, 1):
         if buff.buff:
             await img.draw_line(
                 (60, 60 + 120 * i), (1002, 60 + 120 * i), (255, 255, 255, 75), 2
@@ -502,7 +503,7 @@ async def draw_buff_pic(buff_list: list[BuffInfo]) -> ShowImage:
                 (60, 120 * i), (60, 120 * (i + 1)), (255, 255, 255, 75), 2
             )
             await img.text(
-                i + 1,
+                j,
                 (0, 60),
                 (120 * i, 120 * (i + 1)),
                 fm.get("hywh.ttf", 30),
@@ -557,7 +558,7 @@ async def draw_buff_pic(buff_list: list[BuffInfo]) -> ShowImage:
                 2,
             )
             i += 1
-
+    await img.crop((0, 0, 1002, 120 * i))
     return img
 
 

@@ -1,7 +1,10 @@
 from nonebot.log import logger
 
 from ..role_model import RoleModel
+from .Bennett import Bennett
+from .Ganyu import Ganyu
 from .Xingqiu import Xingqiu
+from .Yae import Yae
 
 
 async def get_role(name: str, user_qq: str, uid: str):

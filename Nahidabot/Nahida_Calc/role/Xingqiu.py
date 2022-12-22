@@ -1,3 +1,5 @@
+from nonebot.utils import run_sync
+
 from Nahidabot.utils.classmodel import DMG, Buff, BuffInfo, BuffSetting, Multiplier
 
 from ..dmg_model import reserve_setting, reserve_weight
@@ -10,7 +12,6 @@ class Xingqiu(RoleModel):
     def C2(self, buff_info: BuffInfo):
         """天青现虹"""
         setting = buff_info.setting
-
         if setting.label == "0":
             setting.state = "×"
         else:
@@ -21,16 +22,15 @@ class Xingqiu(RoleModel):
                 resist_reduction=0.15,
             )
 
-    C4_to_E: float = 1
+    C4_to_E = 1.0
     """E技能倍率加成（命座4）"""
 
     def C4(self, buff_info: BuffInfo):
         """孤舟斩蛟"""
         setting = buff_info.setting
-
         if setting.label == "0":
             setting.state = "×"
-            self.C4_to_E = 1
+            self.C4_to_E = 1.0
         else:
             setting.state = "✓"
             buff_info.buff = Buff(dsc="古华剑·裁雨留虹持续期间，古华剑·画雨笼山倍率×1.5")
@@ -70,7 +70,9 @@ class Xingqiu(RoleModel):
     def valid_prop(self):
         return ["atk", "atk_per", "hydro", "crit", "crit_hurt"]
 
-    async def setting(self, buff_list: list[BuffInfo]):
+    @run_sync
+    def setting(self, buff_list: list[BuffInfo]):
+        """增益设置"""
         output: list[BuffInfo] = []
         labels = reserve_setting(buff_list)
 
@@ -99,7 +101,9 @@ class Xingqiu(RoleModel):
                 )
         return output
 
-    async def buff(self, buff_list: list[BuffInfo]):
+    @run_sync
+    def buff(self, buff_list: list[BuffInfo]):
+        """增益列表"""
         for buff in buff_list:
             if buff.name == "天青现虹":
                 self.C2(buff)
@@ -108,7 +112,9 @@ class Xingqiu(RoleModel):
 
         return buff_list
 
-    async def weight(self, dmg_list: list[DMG]):
+    @run_sync
+    def weight(self, dmg_list: list[DMG]):
+        """伤害权重"""
         output: list[DMG] = []
         weights = reserve_weight(dmg_list)
 
@@ -119,7 +125,6 @@ class Xingqiu(RoleModel):
                 weight=weights.get("充能效率阈值", 180),
             )
         )
-
         output.append(
             DMG(
                 index=1,
@@ -129,7 +134,6 @@ class Xingqiu(RoleModel):
                 weight=weights.get("古华剑·画雨笼山", 5),
             )
         )
-
         output.append(
             DMG(
                 index=2,
@@ -139,11 +143,11 @@ class Xingqiu(RoleModel):
                 weight=weights.get("古华剑·裁雨留虹", 10),
             )
         )
-
         return output
 
-    async def dmg(self, dmg_list: list[DMG]):
-
+    @run_sync
+    def dmg(self, dmg_list: list[DMG]):
+        """伤害列表"""
         for dmg in dmg_list:
             if dmg.name == "古华剑·画雨笼山" and dmg.weight != 0:
                 self.skill_E(dmg)

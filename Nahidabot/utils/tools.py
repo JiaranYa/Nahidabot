@@ -1,8 +1,3 @@
-from nonebot.log import logger
-import toml
-from .path import VERSION_PATH
-
-
 def rarity_rating(score: float, flag: str = "single") -> tuple[str, str]:
     """评分"""
     if flag == "total":
@@ -26,10 +21,3 @@ def rarity_rating(score: float, flag: str = "single") -> tuple[str, str]:
         return "G", "white"
     else:
         return "UN", "#afafaf"
-
-
-async def check_version():
-    """版本检查"""
-    logger.opt(colors=True).info("纳西妲开始检查虚空")
-    version = toml.load(VERSION_PATH)["VERSION"]
-    logger.opt(colors=True).info(f"本机版本:{version}")

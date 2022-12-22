@@ -1,12 +1,13 @@
+from nonebot.utils import run_sync
+
 from Nahidabot.database.models import PropList, RoleBasicInfo
 from Nahidabot.utils.classmodel import DMG, BuffInfo, Role, RoleInfo
 
-from .dmg_model import DMGCalc
+from .dmg_model import DMGCalc, reserve_setting, reserve_weight
 from .relics import artifacts, artifacts_setting
 
 # from .role import role_buff, role_dmg
 from .weapon import weapon_buff, weapon_setting
-from .dmg_model import reserve_setting, reserve_weight
 
 
 class RoleModel(Role):
@@ -15,6 +16,7 @@ class RoleModel(Role):
     prebuff: list[BuffInfo] = []
     """圣遗物面板增益"""
 
+    @run_sync
     def get_recharge(self):
         """充能（用于圣遗物计算）"""
         calc = DMGCalc(self.fight_prop, self.info.level) + self.prebuff
@@ -62,26 +64,29 @@ class RoleModel(Role):
         """有效属性"""
         return []
 
-
-    async def setting(self, buff_list: list[BuffInfo]) -> list[BuffInfo]:
+    @run_sync
+    def setting(self, buff_list: list[BuffInfo]) -> list[BuffInfo]:
         """增益设置"""
         output: list[BuffInfo] = []
         labels = reserve_setting(buff_list)
 
         return output
 
-    async def buff(self, buff_list: list[BuffInfo]) -> list[BuffInfo]:
+    @run_sync
+    def buff(self, buff_list: list[BuffInfo]) -> list[BuffInfo]:
         """增益列表"""
         return buff_list
 
-    async def weight(self, dmg_list: list[DMG]) -> list[DMG]:
+    @run_sync
+    def weight(self, dmg_list: list[DMG]) -> list[DMG]:
         """伤害权重"""
         output: list[DMG] = []
         weights = reserve_weight(dmg_list)
 
         return output
 
-    async def dmg(self, dmg_list: list[DMG]) -> list[DMG]:
+    @run_sync
+    def dmg(self, dmg_list: list[DMG]) -> list[DMG]:
         """伤害列表"""
         return dmg_list
 
@@ -136,17 +141,19 @@ class RoleModel(Role):
 
     async def load_buff(self, input_buff: list[BuffInfo], mode: str):
         """获取外部增益"""
-        partner_buff = []
+        buffs = []
         for buff in input_buff:
             if self.name not in buff.source:
-                partner_buff.append(buff)
+                buffs.append(buff)
 
-        if mode == "propbuff":
-            self.propbuff.extend(partner_buff)
+        if mode == "prebuff":
+            self.prebuff.extend(buffs)
+        elif mode == "propbuff":
+            self.propbuff.extend(buffs)
         elif mode == "transbuff":
-            self.transbuff.extend(partner_buff)
+            self.transbuff.extend(buffs)
         else:
-            self.dmgbuff.extend(partner_buff)
+            self.dmgbuff.extend(buffs)
 
     async def get_dmg(self):
         """获取伤害列表"""

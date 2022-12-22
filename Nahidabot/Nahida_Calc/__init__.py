@@ -8,12 +8,11 @@ from .role import RoleModel, get_role
 from .score import get_scores
 
 
-async def update_rolemodel(user_qq, aid):
+async def update_rolemodel(user_qq, uid, aid):
     """"""
     info: RoleInfo
     (info,) = await RoleBasicInfo.filter(aid=aid).values_list("info", flat=True)
 
-    (uid,) = await Player.filter(user_qq=user_qq).values_list("uid", flat=True)
     role: Optional[RoleModel] = await get_role(name=info.abbr, user_qq=user_qq, uid=uid)
     if role.name:
         party_list: list[RoleModel] = [role]

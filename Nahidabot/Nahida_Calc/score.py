@@ -72,7 +72,7 @@ async def get_scores(role: RoleModel):
             if item is None:
                 continue
             new_role = await take_off_item(role, item)
-            score = await get_score(new_role, item.type, await role.get_dmg())
+            score = await get_score(new_role, role, item.type, await role.get_dmg())
             output.set_score(item.type, score)
 
     return output
@@ -130,14 +130,16 @@ async def extract_prop(role: RoleModel, slot: PropertySlot):
         prop.geo_dmg_bonus -= slot.value / 100
 
 
-async def get_score(role: RoleModel, type: str, dmg_true: list[DMG]):
+async def get_score(
+    role: RoleModel, true_role: RoleModel, type: str, dmg_true: list[DMG]
+):
     """计算圣遗物分数"""
     valid_prop = role.valid_prop
     threshold = role.dmg_list[0].weight / 100
-    if threshold > role.fight_prop.recharge:
+    if threshold > role.fight_prop.recharge and "charge" not in valid_prop:
         valid_prop.append("charge")
     max_charge = max(
-        np.ceil((threshold - role.fight_prop.recharge) / slot_dict["charge"]), 0
+        np.ceil((threshold - role.fight_prop.recharge) / (slot_dict["charge"] / 100)), 0
     )
     #
     main_prop_list = await get_main_prop(valid_prop, type)
@@ -168,30 +170,32 @@ async def get_score(role: RoleModel, type: str, dmg_true: list[DMG]):
         目前b 取 +inf
         """
         if x < threshold:
+            b = 5
             return 1 / (1 + 7.29 / slot_dict["charge"] * (threshold - x))
         return 1
 
     dmg_base = await role.get_dmg()
 
-    async def calc_score(dmg_list: list[DMG], role: RoleModel):
+    async def calc_score(role: RoleModel):
+        dmg_list = await role.get_dmg()
         score = 0.0
         for i, info in enumerate(dmg_list):
             if i == 0:
                 continue
-            score += max(info.weight, 0) * (info.exp_value / dmg_base[i].exp_value)
-        score *= compens_curve(role.get_recharge())
+            if info.weight > 0:
+                score += info.weight * (info.exp_value / dmg_base[i].exp_value)
+        score *= compens_curve(await role.get_recharge())
         return score
 
-    base_score = await calc_score(dmg_base, role)
-    true_score = await calc_score(dmg_true, role) - base_score
+    base_score = await calc_score(role)
+    true_score = await calc_score(true_role) - base_score
 
     max_main_score = 0.0
     for main in main_prop_list:
         (main_buff,), _ = await get_buff([main])
         role_main_prop = deepcopy(role)
-        await role_main_prop.load_buff(main_buff, "propbuff")
-        dmg_main = await role_main_prop.get_dmg()
-        main_score = await calc_score(dmg_main, role_main_prop) - base_score
+        await role_main_prop.load_buff(main_buff, "prebuff")
+        main_score = await calc_score(role_main_prop) - base_score
         if max_main_score < main_score:
             max_main_score = main_score
 
@@ -199,9 +203,8 @@ async def get_score(role: RoleModel, type: str, dmg_true: list[DMG]):
     max_score = 0.0
     for relic_buff in buff_list:
         role_est = deepcopy(role)
-        await role_est.load_buff(relic_buff, "propbuff")
-        dmg_est = await role_est.get_dmg()
-        est_score = await calc_score(dmg_est, role_est) - base_score
+        await role_est.load_buff(relic_buff, "prebuff")
+        est_score = await calc_score(role_est) - base_score
         if max_score < est_score:
             max_score = est_score
         scores.append(est_score)

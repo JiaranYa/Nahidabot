@@ -249,7 +249,7 @@ async def artifacts(buff_list: list[BuffInfo], talent: PropInfo, prop: DMGCalc):
             else:
                 setting.state = "✓"
                 buff_info.buff = Buff(
-                    dsc=f"施放元素爆发12秒内，全队攻击+20% => +{prop.atk_base * 0.2}",
+                    dsc=f"施放元素爆发12秒内，全队攻击+20% => +{round(prop.atk_base * 0.2)}",
                     triger_type="active",
                     atk=PoFValue(percent=0.2),
                 )

@@ -18,7 +18,6 @@ info_panel = on_command("nhd", aliases={"角色面板"}, priority=5, block=True)
 @info_panel.handle()
 async def _(event: MessageEvent, msg: Message = CommandArg()):
     name = msg.extract_plain_text()
-    feedback = Message()
     (uid,) = await Player.filter(user_qq=event.user_id).values_list("uid", flat=True)
 
     (role,) = await PropList.filter(
@@ -35,8 +34,7 @@ async def _(event: MessageEvent, msg: Message = CommandArg()):
         dmg_list=role.dmg_info,
     )
     if img := await draw_role_info(role_model, role.uid, role.update_time):
-        feedback += img
-        await info_panel.finish(feedback)
+        await info_panel.finish(img, at_sender=True)
     else:
         await info_panel.finish("没有该角色信息")
 

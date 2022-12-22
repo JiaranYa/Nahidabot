@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 BASE_PATH = Path().cwd() / "Nahidabot"
 DATABASE_PATH = BASE_PATH / "database"
 
@@ -18,4 +17,4 @@ GRAPHIC_PATH.mkdir(parents=True, exist_ok=True)
 FONT_PATH.mkdir(parents=True, exist_ok=True)
 AKASHA_STORE_URL = "https://cdn.jsdelivr.net/gh/JiaranYa/Akashastore@master/"
 NAHIDABOT_URL = "https://cdn.jsdelivr.net/gh/JiaranYa/Nahidabot@master/"
-GITHUB_URL = "https://github.com/JiaranYa/Nahidabot.git"
+# GITHUB_URL = "https://github.com/JiaranYa/Nahidabot.git"
